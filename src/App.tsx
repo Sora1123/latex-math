@@ -44,24 +44,51 @@ export default function App() {
           </div>
           <div className="p-6 space-y-6">
             <div className="space-y-4">
-              <label className="text-sm font-medium text-neutral-700">Enter a mathematical expression:</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-neutral-700">
+                  Desmos-Style Math Input:
+                </label>
+                <span className="text-xs text-neutral-500">
+                  Direct rendered typing &amp; keypad
+                </span>
+              </div>
               
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-neutral-500 font-medium mr-1">Quick Try:</span>
+                {[
+                  { label: '\\sqrt 1+2', val: '\\sqrt 1+2' },
+                  { label: '\\sqrt{1+2}', val: '\\sqrt{1+2}' },
+                  { label: '\\frac12 + 3', val: '\\frac12 + 3' },
+                  { label: '\\sqrt[3]8 * 5', val: '\\sqrt[3]8 * 5' },
+                  { label: '\\frac{2}{3} + \\int_0^2 x^2 \\, dx', val: '\\frac{2}{3} + \\int_0^2 x^2 \\, dx' },
+                ].map((sample) => (
+                  <button
+                    key={sample.label}
+                    type="button"
+                    onClick={() => setValue(sample.val)}
+                    className="px-2.5 py-1 rounded-md bg-neutral-100 hover:bg-blue-50 hover:text-blue-700 text-neutral-700 font-mono text-xs border border-neutral-200 transition"
+                  >
+                    {sample.label}
+                  </button>
+                ))}
+              </div>
+
               <LatexInput
                 value={value}
                 onChange={setValue}
-                className="w-full px-4 py-3 border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
               />
 
-              <div className="min-h-[60px] flex items-center justify-center p-4 bg-neutral-50 border border-neutral-100 rounded-lg">
-                <LatexExpression expression={value} displayMode={true} className="text-2xl text-neutral-800 [&_.katex-html]:hidden" />
-              </div>
-
-              <div className="text-center font-mono text-lg">
-                {error ? (
-                  <span className="text-red-500">Error: {error}</span>
-                ) : (
-                  <span className="text-emerald-600 font-bold">= {result}</span>
-                )}
+              <div className="p-4 rounded-xl border bg-neutral-900 text-white flex items-center justify-between shadow-xs">
+                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  Evaluated Result
+                </span>
+                <div className="text-xl font-mono font-bold">
+                  {error ? (
+                    <span className="text-red-400 font-sans text-sm">Error: {error}</span>
+                  ) : (
+                    <span className="text-emerald-400">= {result !== null ? result : '—'}</span>
+                  )}
+                </div>
               </div>
             </div>
 

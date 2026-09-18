@@ -187,5 +187,52 @@ describe('Parser (Phase 1)', () => {
         expression: { type: 'Variable', name: 'x' }
       });
     });
+
+    it('parses unbraced LaTeX expressions by making arguments explicit', () => {
+      // \sqrt 1+2 is parsed as \sqrt{1} + 2
+      expect(parseLatex('\\sqrt 1+2')).toEqual({
+        type: 'BinaryOperation',
+        operator: '+',
+        left: {
+          type: 'Root',
+          index: { type: 'Number', value: 2 },
+          radicand: { type: 'Number', value: 1 }
+        },
+        right: { type: 'Number', value: 2 }
+      });
+
+      // \sqrt 1 + 2
+      expect(parseLatex('\\sqrt 1 + 2')).toEqual({
+        type: 'BinaryOperation',
+        operator: '+',
+        left: {
+          type: 'Root',
+          index: { type: 'Number', value: 2 },
+          radicand: { type: 'Number', value: 1 }
+        },
+        right: { type: 'Number', value: 2 }
+      });
+
+      // \frac12 is parsed as \frac{1}{2}
+      expect(parseLatex('\\frac12')).toEqual({
+        type: 'Fraction',
+        numerator: { type: 'Number', value: 1 },
+        denominator: { type: 'Number', value: 2 }
+      });
+
+      // \frac 1 2 is parsed as \frac{1}{2}
+      expect(parseLatex('\\frac 1 2')).toEqual({
+        type: 'Fraction',
+        numerator: { type: 'Number', value: 1 },
+        denominator: { type: 'Number', value: 2 }
+      });
+
+      // \sqrt x is parsed as \sqrt{x}
+      expect(parseLatex('\\sqrt x')).toEqual({
+        type: 'Root',
+        index: { type: 'Number', value: 2 },
+        radicand: { type: 'Variable', name: 'x' }
+      });
+    });
   });
 });

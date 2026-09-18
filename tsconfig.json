@@ -17,6 +17,12 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "paths": {
+      "@latex-math/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@latex-math/react": [
+        "./packages/react/src/index.tsx"
+      ],
       "@/*": [
         "./*"
       ]

@@ -1,6 +1,9 @@
 import { Token, TokenType, tokenize } from '../tokenizer/index.js';
 import { Expression } from '../ast/index.js';
 import { LatexParseError } from '../errors/index.js';
+import { normalizeLatex } from './normalizer.js';
+
+export { normalizeLatex };
 
 function extractDx(expr: Expression): { integrand: Expression; variable: string } | null {
   if (expr.type === 'BinaryOperation' && expr.operator === '*') {
@@ -15,7 +18,8 @@ function extractDx(expr: Expression): { integrand: Expression; variable: string 
 }
 
 export function parseLatex(input: string): Expression {
-  const tokens = tokenize(input);
+  const normalized = normalizeLatex(input);
+  const tokens = tokenize(normalized);
   let current = 0;
 
   function peek(): Token {
@@ -362,23 +366,44 @@ export function parseLatex(input: string): Expression {
       }
 
       if (token.value === '\\binom') {
-        consume(TokenType.LeftBrace);
-        const n = parseExpression();
-        consume(TokenType.RightBrace);
-        consume(TokenType.LeftBrace);
-        const k = parseExpression();
-        consume(TokenType.RightBrace);
+        let n: Expression;
+        if (peek().type === TokenType.LeftBrace) {
+          consume(TokenType.LeftBrace);
+          n = parseExpression();
+          consume(TokenType.RightBrace);
+        } else {
+          n = parsePrimary();
+        }
+
+        let k: Expression;
+        if (peek().type === TokenType.LeftBrace) {
+          consume(TokenType.LeftBrace);
+          k = parseExpression();
+          consume(TokenType.RightBrace);
+        } else {
+          k = parsePrimary();
+        }
         return { type: 'Combinatorics', n, k };
       }
 
       if (token.value === '\\frac') {
-        consume(TokenType.LeftBrace);
-        const numerator = parseExpression();
-        consume(TokenType.RightBrace);
+        let numerator: Expression;
+        if (peek().type === TokenType.LeftBrace) {
+          consume(TokenType.LeftBrace);
+          numerator = parseExpression();
+          consume(TokenType.RightBrace);
+        } else {
+          numerator = parsePrimary();
+        }
         
-        consume(TokenType.LeftBrace);
-        const denominator = parseExpression();
-        consume(TokenType.RightBrace);
+        let denominator: Expression;
+        if (peek().type === TokenType.LeftBrace) {
+          consume(TokenType.LeftBrace);
+          denominator = parseExpression();
+          consume(TokenType.RightBrace);
+        } else {
+          denominator = parsePrimary();
+        }
 
         if (numerator.type === 'Variable' && numerator.name === 'd') {
           if (denominator.type === 'BinaryOperation' && denominator.operator === '*' && denominator.implicit && denominator.left.type === 'Variable' && denominator.left.name === 'd' && denominator.right.type === 'Variable') {
@@ -459,9 +484,14 @@ export function parseLatex(input: string): Expression {
           consume(TokenType.RightBracket);
         }
         
-        consume(TokenType.LeftBrace);
-        const radicand = parseExpression();
-        consume(TokenType.RightBrace);
+        let radicand: Expression;
+        if (peek().type === TokenType.LeftBrace) {
+          consume(TokenType.LeftBrace);
+          radicand = parseExpression();
+          consume(TokenType.RightBrace);
+        } else {
+          radicand = parsePrimary();
+        }
 
         return { type: 'Root', radicand, index };
       }
