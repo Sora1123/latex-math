@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { parseLatex, evaluateLatex, EvaluationError, LatexParseError } from '@latex-math/core';
 
+export * from './LatexExpression.js';
+export * from './LatexInput.js';
+export * from './useLatexEvaluation.js';
+
 export interface MathInputProps {
   value: string;
   onChange: (value: string) => void;

@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { MathInput } from '@latex-math/react';
+import { LatexInput, LatexExpression, useLatexEvaluation } from '@latex-math/react';
 import { parseLatex } from '@latex-math/core';
 
 export default function App() {
@@ -15,6 +15,8 @@ export default function App() {
     x: 10,
     y: 5
   };
+
+  const { result, error } = useLatexEvaluation(value, variables);
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 p-8 font-sans">
@@ -41,16 +43,30 @@ export default function App() {
             </h2>
           </div>
           <div className="p-6 space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <label className="text-sm font-medium text-neutral-700">Enter a mathematical expression:</label>
-              <MathInput
+              
+              <LatexInput
                 value={value}
                 onChange={setValue}
-                variables={variables}
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
               />
+
+              <div className="min-h-[60px] flex items-center justify-center p-4 bg-neutral-50 border border-neutral-100 rounded-lg">
+                <LatexExpression expression={value} displayMode={true} className="text-2xl text-neutral-800" />
+              </div>
+
+              <div className="text-center font-mono text-lg">
+                {error ? (
+                  <span className="text-red-500">Error: {error}</span>
+                ) : (
+                  <span className="text-emerald-600 font-bold">= {result}</span>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 pt-4">
+
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-neutral-500 uppercase tracking-wider">Features Supported</h3>
                 <ul className="text-sm text-neutral-600 space-y-2">
