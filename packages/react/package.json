@@ -1,0 +1,19 @@
+{
+  "name": "@latex-math/react",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.tsx --format esm,cjs && tsc --emitDeclarationOnly",
+    "dev": "tsup src/index.tsx --format esm,cjs --watch"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@latex-math/core": "*"
+  }
+}

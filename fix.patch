@@ -1,0 +1,13 @@
+--- packages/core/src/parser/index.ts
++++ packages/core/src/parser/index.ts
+@@ -409,6 +409,10 @@
+           variable = extracted.variable;
+         }
+         return { type: 'Integral', variable, lowerBound, upperBound, expression: integrand };
++      }
++
++      if (token.value === '\\sqrt') {
++        let index: Expression = { type: 'Number', value: 2 };
+         if (peek().type === TokenType.LeftBracket) {
+           consume();
+           index = parseExpression();
