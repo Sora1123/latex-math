@@ -53,7 +53,7 @@ export default function App() {
               />
 
               <div className="min-h-[60px] flex items-center justify-center p-4 bg-neutral-50 border border-neutral-100 rounded-lg">
-                <LatexExpression expression={value} displayMode={true} className="text-2xl text-neutral-800" />
+                <LatexExpression expression={value} displayMode={true} className="text-2xl text-neutral-800 [&_.katex-html]:hidden" />
               </div>
 
               <div className="text-center font-mono text-lg">
