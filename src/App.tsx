@@ -46,33 +46,10 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-neutral-700">
-                  Desmos-Style Math Input:
+                  Math Input:
                 </label>
-                <span className="text-xs text-neutral-500">
-                  Direct rendered typing &amp; keypad
-                </span>
               </div>
               
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="text-neutral-500 font-medium mr-1">Quick Try:</span>
-                {[
-                  { label: '\\sqrt 1+2', val: '\\sqrt 1+2' },
-                  { label: '\\sqrt{1+2}', val: '\\sqrt{1+2}' },
-                  { label: '\\frac12 + 3', val: '\\frac12 + 3' },
-                  { label: '\\sqrt[3]8 * 5', val: '\\sqrt[3]8 * 5' },
-                  { label: '\\frac{2}{3} + \\int_0^2 x^2 \\, dx', val: '\\frac{2}{3} + \\int_0^2 x^2 \\, dx' },
-                ].map((sample) => (
-                  <button
-                    key={sample.label}
-                    type="button"
-                    onClick={() => setValue(sample.val)}
-                    className="px-2.5 py-1 rounded-md bg-neutral-100 hover:bg-blue-50 hover:text-blue-700 text-neutral-700 font-mono text-xs border border-neutral-200 transition"
-                  >
-                    {sample.label}
-                  </button>
-                ))}
-              </div>
-
               <LatexInput
                 value={value}
                 onChange={setValue}

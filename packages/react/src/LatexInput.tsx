@@ -1,5 +1,11 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { normalizeLatex } from '@latex-math/core';
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
+import { normalizeLatex } from "@latex-math/core";
 
 export interface LatexInputProps {
   value: string;
@@ -10,26 +16,26 @@ export interface LatexInputProps {
   showLatexBadge?: boolean;
 }
 
-const DESMOS_BUTTONS = [
-  { label: 'a/b', latex: '\\frac{#?}{#?}', title: 'Fraction' },
-  { label: 'x²', latex: '^{2}', title: 'Squared' },
-  { label: 'aᵇ', latex: '^{#?}', title: 'Superscript / Power' },
-  { label: '√x', latex: '\\sqrt{#?}', title: 'Square Root' },
-  { label: 'ⁿ√x', latex: '\\sqrt[#?]{#?}', title: 'nth Root' },
-  { label: 'π', latex: '\\pi', title: 'Pi' },
-  { label: '∫', latex: '\\int_{#?}^{#?} #?\\, dx', title: 'Definite Integral' },
-  { label: 'Σ', latex: '\\sum_{#?}^{#?} #?', title: 'Summation' },
-  { label: 'sin', latex: '\\sin\\left(#?\\right)', title: 'Sine' },
-  { label: 'cos', latex: '\\cos\\left(#?\\right)', title: 'Cosine' },
-  { label: 'tan', latex: '\\tan\\left(#?\\right)', title: 'Tangent' },
-  { label: '( )', latex: '\\left(#?\\right)', title: 'Parentheses' },
+const MATH_BUTTONS = [
+  { label: "a/b", latex: "\\frac{#?}{#?}", title: "Fraction" },
+  { label: "x²", latex: "^{2}", title: "Squared" },
+  { label: "aᵇ", latex: "^{#?}", title: "Superscript / Power" },
+  { label: "√x", latex: "\\sqrt{#?}", title: "Square Root" },
+  { label: "ⁿ√x", latex: "\\sqrt[#?]{#?}", title: "nth Root" },
+  { label: "π", latex: "\\pi", title: "Pi" },
+  { label: "∫", latex: "\\int_{#?}^{#?} #?\\, dx", title: "Definite Integral" },
+  { label: "Σ", latex: "\\sum_{#?}^{#?} #?", title: "Summation" },
+  { label: "sin", latex: "\\sin\\left(#?\\right)", title: "Sine" },
+  { label: "cos", latex: "\\cos\\left(#?\\right)", title: "Cosine" },
+  { label: "tan", latex: "\\tan\\left(#?\\right)", title: "Tangent" },
+  { label: "( )", latex: "\\left(#?\\right)", title: "Parentheses" },
 ];
 
-export const LatexInput: React.FC<LatexInputProps> = ({ 
-  value, 
-  onChange, 
-  className = '',
-  placeholder = 'Type math... e.g. \\frac{2}{3} + x^2 or use keyboard shortcuts',
+export const LatexInput: React.FC<LatexInputProps> = ({
+  value,
+  onChange,
+  className = "",
+  placeholder = "\\text{Type math... }",
   showToolbar = true,
   showLatexBadge = true,
 }) => {
@@ -47,52 +53,55 @@ export const LatexInput: React.FC<LatexInputProps> = ({
     }
   }, [value]);
 
-  const hasImplicitGrouping = Boolean(value && explicitLatex && explicitLatex !== value);
+  const hasImplicitGrouping = Boolean(
+    value && explicitLatex && explicitLatex !== value,
+  );
 
   // Initialize MathLive custom element
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     let active = true;
-    import('mathlive').then((ml) => {
+    import("mathlive").then((ml) => {
       if (!active || !containerRef.current) return;
 
       try {
         if (ml.MathfieldElement && !ml.MathfieldElement.fontsDirectory) {
-          ml.MathfieldElement.fontsDirectory = 'https://unpkg.com/mathlive/dist/fonts';
+          ml.MathfieldElement.fontsDirectory =
+            "https://unpkg.com/mathlive/dist/fonts";
         }
       } catch {
         // fallback to default
       }
 
-      let mf = containerRef.current.querySelector('math-field') as any;
+      let mf = containerRef.current.querySelector("math-field") as any;
       if (!mf) {
-        mf = document.createElement('math-field');
-        mf.setAttribute('virtual-keyboard-mode', 'manual');
-        mf.style.width = '100%';
-        mf.style.minHeight = '52px';
-        mf.style.fontSize = '1.4rem';
-        mf.style.padding = '0.625rem 0.875rem';
-        mf.style.outline = 'none';
-        mf.style.border = 'none';
-        mf.style.background = 'transparent';
-        mf.style.color = '#171717';
-        mf.style.display = 'block';
+        mf = document.createElement("math-field");
+        mf.setAttribute("virtual-keyboard-mode", "manual");
+        mf.style.width = "100%";
+        mf.style.minHeight = "52px";
+        mf.style.fontSize = "1.4rem";
+        mf.style.padding = "0.625rem 0.875rem";
+        mf.style.outline = "none";
+        mf.style.border = "none";
+        mf.style.background = "transparent";
+        mf.style.color = "#171717";
+        mf.style.display = "block";
 
         if (placeholder) {
-          mf.setAttribute('placeholder', placeholder);
+          mf.setAttribute("placeholder", placeholder);
         }
 
         containerRef.current.appendChild(mf);
         mfRef.current = mf;
 
-        mf.addEventListener('input', (ev: Event) => {
+        mf.addEventListener("input", (ev: Event) => {
           const val = (ev.target as any).value;
           onChange(val);
         });
       }
 
-      mf.setValue(value || '', { silenceNotifications: true });
+      mf.setValue(value || "", { silenceNotifications: true });
       setIsMounted(true);
     });
 
@@ -105,27 +114,30 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   useEffect(() => {
     if (mfRef.current && isMounted && !isRawMode) {
       if (mfRef.current.value !== value) {
-        mfRef.current.setValue(value || '', { silenceNotifications: true });
+        mfRef.current.setValue(value || "", { silenceNotifications: true });
       }
     }
   }, [value, isMounted, isRawMode]);
 
-  const insertTemplate = useCallback((template: string) => {
-    if (mfRef.current && !isRawMode) {
-      mfRef.current.focus();
-      mfRef.current.executeCommand(['insert', template]);
-      onChange(mfRef.current.value);
-    } else {
-      onChange((value || '') + template);
-    }
-  }, [isRawMode, onChange, value]);
+  const insertTemplate = useCallback(
+    (template: string) => {
+      if (mfRef.current && !isRawMode) {
+        mfRef.current.focus();
+        mfRef.current.executeCommand(["insert", template]);
+        onChange(mfRef.current.value);
+      } else {
+        onChange((value || "") + template);
+      }
+    },
+    [isRawMode, onChange, value],
+  );
 
   const clearInput = useCallback(() => {
     if (mfRef.current) {
-      mfRef.current.setValue('', { silenceNotifications: true });
+      mfRef.current.setValue("", { silenceNotifications: true });
       mfRef.current.focus();
     }
-    onChange('');
+    onChange("");
   }, [onChange]);
 
   const handleCopyLatex = useCallback(() => {
@@ -144,18 +156,20 @@ export const LatexInput: React.FC<LatexInputProps> = ({
           <div className="flex items-center gap-2">
             <span className="font-semibold text-neutral-600">Math Input</span>
             <span className="text-neutral-400">|</span>
-            <span className="text-neutral-400">Type <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">/</kbd> for fraction, <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">^</kbd> for power</span>
+            <span className="text-neutral-400">
+              Type{" "}
+              <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">
+                /
+              </kbd>{" "}
+              for fraction,{" "}
+              <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">
+                ^
+              </kbd>{" "}
+              for power
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setIsRawMode(!isRawMode)}
-              className="px-2 py-0.5 rounded text-[11px] font-medium bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition"
-              title="Toggle between Desmos-style rendered math field and raw LaTeX text"
-            >
-              {isRawMode ? 'Use Desmos Field' : 'Edit Raw LaTeX'}
-            </button>
             {value && (
               <button
                 type="button"
@@ -171,41 +185,19 @@ export const LatexInput: React.FC<LatexInputProps> = ({
 
         {/* Live Input Field */}
         <div className="p-2 min-h-[56px] flex items-center">
-          {isRawMode ? (
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onBlur={() => {
-                if (hasImplicitGrouping && explicitLatex) {
-                  onChange(explicitLatex);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  if (hasImplicitGrouping && explicitLatex) {
-                    onChange(explicitLatex);
-                  }
-                }
-              }}
-              placeholder={placeholder}
-              className="w-full px-3 py-2 font-mono text-base border-0 focus:outline-none bg-transparent text-neutral-900"
-              spellCheck={false}
-              autoFocus
-            />
-          ) : (
-            <div 
-              ref={containerRef} 
+          {
+            <div
+              ref={containerRef}
               className="w-full"
               onClick={() => mfRef.current?.focus()}
             />
-          )}
+          }
         </div>
 
-        {/* Desmos-style quick math toolbar */}
+        {/* math toolbar */}
         {showToolbar && (
           <div className="flex items-center gap-1 px-2 py-1.5 bg-neutral-50/60 border-t border-neutral-100 overflow-x-auto">
-            {DESMOS_BUTTONS.map((btn) => (
+            {MATH_BUTTONS.map((btn) => (
               <button
                 key={btn.label}
                 type="button"
@@ -225,7 +217,9 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         <div className="flex flex-col gap-1.5 text-xs px-3 py-2 bg-neutral-100/70 border border-neutral-200/70 rounded-lg text-neutral-600 font-mono overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="truncate flex items-center gap-2">
-              <span className="text-neutral-400 select-none uppercase text-[10px] font-sans font-semibold tracking-wider">LaTeX</span>
+              <span className="text-neutral-400 select-none uppercase text-[10px] font-sans font-semibold tracking-wider">
+                LaTeX
+              </span>
               <span className="text-neutral-800 select-all">{value}</span>
             </div>
             <button
@@ -233,15 +227,19 @@ export const LatexInput: React.FC<LatexInputProps> = ({
               onClick={handleCopyLatex}
               className="ml-2 text-[11px] text-blue-600 hover:text-blue-800 font-sans font-medium shrink-0"
             >
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? "Copied!" : "Copy"}
             </button>
           </div>
 
           {hasImplicitGrouping && (
             <div className="flex items-center justify-between pt-1.5 border-t border-neutral-200/60 text-[11px]">
               <div className="truncate flex items-center gap-1.5 text-emerald-700">
-                <span className="font-sans font-semibold uppercase text-[9px] tracking-wider text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/50">Auto-Compiled</span>
-                <span className="select-all font-mono font-medium">{explicitLatex}</span>
+                <span className="font-sans font-semibold uppercase text-[9px] tracking-wider text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/50">
+                  Auto-Compiled
+                </span>
+                <span className="select-all font-mono font-medium">
+                  {explicitLatex}
+                </span>
               </div>
               <button
                 type="button"
