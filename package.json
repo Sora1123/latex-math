@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
-    "@latex-math/core": "*",
-    "@latex-math/react": "*",
+    "@latex-math/core": "^0.1.0",
+    "@latex-math/react": "^0.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
@@ -47,5 +47,19 @@
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "author": "Sora1123",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sora1123/latex-math.git"
   }
 }
