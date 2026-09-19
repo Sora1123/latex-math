@@ -24,5 +24,19 @@
   "dependencies": {
     "@latex-math/core": "*",
     "mathlive": "^0.110.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "author": "Sora1123",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sora1123/latex-math.git"
   }
 }
