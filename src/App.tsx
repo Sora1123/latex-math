@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { LatexInput, LatexExpression, useLatexEvaluation } from '@latex-math/react';
+import { LatexInput, useLatexEvaluation } from '@latex-math/react';
 import { parseLatex } from '@latex-math/core';
 
 export default function App() {
