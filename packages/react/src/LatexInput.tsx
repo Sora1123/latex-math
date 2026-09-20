@@ -18,6 +18,7 @@ export interface LatexInputProps {
   showLatexBadge?: boolean;
   showKeyboard?: boolean;
   showMenu?: boolean;
+  showEvaluatedResult?: boolean;
 }
 
 const MATH_BUTTONS = [
@@ -45,6 +46,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   showLatexBadge = true,
   showKeyboard = true,
   showMenu = true,
+  showEvaluatedResult = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mfRef = useRef<any>(null);
@@ -217,25 +219,6 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         </div> */}
 
         {/* Live Input Field */}
-        {/* <div className="p-2 min-h-[56px] flex items-center">
-          <div
-            ref={containerRef}
-            className="w-full"
-            onClick={() => mfRef.current?.focus()}
-          />
-          <div className="h-1/2 w-1/2 ml-auto p-4 rounded-xl border bg-neutral-900 text-xl font-mono font-bold flex flex-col items-center justify-end shadow-xs">
-            {error ? (
-              <span className="text-red-400 font-sans text-sm">
-                Error: {error}
-              </span>
-            ) : (
-              <span className="text-emerald-400 ml-auto">
-                = {result !== null ? result : "—"}
-              </span>
-            )}
-          </div>
-        </div> */}
-
         <div className="relative p-2 min-h-[56px] flex items-center">
           {/* Math Field Container */}
           <div
@@ -245,6 +228,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
           />
 
           {/* Bottom-Right Result Overlay */}
+          {showEvaluatedResult && 
           <div className="absolute bottom-2 right-2 h-1/2 w-1/3 p-2 rounded-xl border bg-neutral-900 text-xl font-mono font-bold flex flex-col items-end justify-end shadow-xs pointer-events-none">
             {error ? (
               <span className="text-red-400 font-sans text-sm">
@@ -256,7 +240,9 @@ export const LatexInput: React.FC<LatexInputProps> = ({
               </span>
             )}
           </div>
+          }
         </div>
+        
 
         {/* math toolbar */}
         {showToolbar && (

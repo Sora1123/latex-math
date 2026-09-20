@@ -59,19 +59,6 @@ export default function App() {
                 showLatexBadge={false}
                 showToolbar={false}
               />
-
-              <div className="p-4 rounded-xl border bg-neutral-900 text-white flex items-center justify-between shadow-xs">
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                  Evaluated Result
-                </span>
-                <div className="text-xl font-mono font-bold">
-                  {error ? (
-                    <span className="text-red-400 font-sans text-sm">Error: {error}</span>
-                  ) : (
-                    <span className="text-emerald-400">= {result !== null ? result : '—'}</span>
-                  )}
-                </div>
-              </div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 pt-4">
