@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "LaTeX Math Input",
+  "description": "Interactive LaTeX math input and real-time mathematical expression evaluator with typesetting.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

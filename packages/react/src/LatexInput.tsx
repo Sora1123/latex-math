@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { normalizeLatex } from "@latex-math/core";
 import { useLatexEvaluation } from "./useLatexEvaluation";
+import { LatexExpression } from "./LatexExpression";
 
 export interface LatexInputProps {
   value: string;
@@ -257,34 +258,39 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         className={`relative border border-neutral-300 rounded-xl bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden ${inputWrapperClassName}`}
       >
         {/* Live Input Field */}
-        <div className="relative p-2 min-h-[56px] flex items-center">
+        <div className={`relative p-2.5 ${showEvaluatedResult ? "min-h-[86px] pb-9" : "min-h-[56px]"} flex flex-col justify-start`}>
           {/* Math Field Container */}
           <div
             ref={containerRef}
-            className={`w-full pr-28 ${mathFieldContainerClassName}`}
+            className={`w-full ${mathFieldContainerClassName}`}
             onClick={() => mfRef.current?.focus()}
           />
 
-          {/* Evaluated Result Overlay */}
+          {/* Evaluated Result Box (bottom-left corner) */}
           {showEvaluatedResult && (
             <div
               className={
                 resultClassName ||
-                "absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-end pointer-events-none z-10 select-none"
+                "absolute left-3 bottom-2 flex items-center pointer-events-none z-10 select-none"
               }
             >
               {error ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-sans font-medium shadow-2xs">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-50 border border-amber-200/90 text-amber-800 text-xs font-sans font-medium shadow-2xs">
                   <span>{error}</span>
                 </div>
               ) : (
-                <div className="flex items-baseline gap-1.5 text-neutral-800 font-sans">
-                  <span className="text-neutral-400 text-base font-light select-none">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border border-neutral-200/90 bg-neutral-50/95 text-neutral-800 shadow-2xs backdrop-blur-xs text-sm">
+                  <span className="text-neutral-400 font-normal select-none text-xs">
                     =
                   </span>
-                  <span className="text-xl font-medium tracking-tight font-mono text-neutral-800 select-all">
-                    {result !== null ? result : "—"}
-                  </span>
+                  {result !== null ? (
+                    <LatexExpression
+                      expression={result}
+                      className="text-neutral-900 font-medium"
+                    />
+                  ) : (
+                    <span className="text-neutral-400 text-xs font-mono">—</span>
+                  )}
                 </div>
               )}
             </div>

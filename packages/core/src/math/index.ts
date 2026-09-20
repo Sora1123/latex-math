@@ -71,14 +71,15 @@ export class SciNumber {
     return new SciNumber(sign * newMantissa, newExp);
   }
 
-  toString(sigFigs: number = 10): string {
+  toLatex(sigFigs: number = 10): string {
     if (this.mantissa === 0) return '0';
     const mStr = parseFloat(this.mantissa.toPrecision(sigFigs)).toString();
     if (this.exponent === 0) return mStr;
-    if (mStr === '1') {
-      return `1 * 10^${this.exponent}`;
-    }
-    return `${mStr} * 10^${this.exponent}`;
+    return `${mStr} \\times 10^{${this.exponent}}`;
+  }
+
+  toString(sigFigs: number = 10): string {
+    return this.toLatex(sigFigs);
   }
 
   static fromNumber(val: number): SciNumber {

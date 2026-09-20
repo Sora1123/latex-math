@@ -21,7 +21,6 @@ export const LatexExpression: React.FC<LatexExpressionProps> = ({
         katex.render(expression, containerRef.current, {
           displayMode,
           throwOnError: false,
-          output: "mathml",
         });
       } catch (err) {
         // Fallback or ignore if katex throws (though throwOnError: false usually handles it)

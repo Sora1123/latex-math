@@ -8,21 +8,55 @@ export interface UseLatexEvaluationResult {
 
 export function formatResult(res: any, sigFigs: number = 10): string {
   if (res === null || res === undefined) return '';
-  if (typeof res === 'string') return res;
+  if (typeof res === 'string') {
+    const sciMatch = res.match(/^([+-]?\d+(?:\.\d+)?)[eE]([+-]?\d+)$/);
+    if (sciMatch) {
+      const m = parseFloat(sciMatch[1]).toString();
+      const exp = parseInt(sciMatch[2], 10);
+      return `${m} \\times 10^{${exp}}`;
+    }
+    const starMatch = res.match(/^([+-]?\d+(?:\.\d+)?)\s*\*\s*10\^\{?([+-]?\d+)\}?$/);
+    if (starMatch) {
+      const m = parseFloat(starMatch[1]).toString();
+      const exp = parseInt(starMatch[2], 10);
+      return `${m} \\times 10^{${exp}}`;
+    }
+    return res;
+  }
 
   if (res && (res.isSciNumber || (typeof res.toString === 'function' && res.constructor?.name === 'SciNumber'))) {
-    return res.toString(sigFigs);
+    if (typeof res.toLatex === 'function') {
+      return res.toLatex(sigFigs);
+    }
+    const m = res.mantissa;
+    const exp = res.exponent;
+    if (m === 0) return '0';
+    const mStr = parseFloat(m.toPrecision(sigFigs)).toString();
+    if (exp === 0) return mStr;
+    return `${mStr} \\times 10^{${exp}}`;
   }
 
   if (typeof res === 'number') {
-    if (res === 0 || Math.abs(res) < 1e-14) return '0';
-    if (Number.isInteger(res)) return res.toString();
-    const str = res.toPrecision(sigFigs);
-    if (str.includes('e')) {
-      const [mantissa, exp] = str.split('e');
+    if (res === 0) return '0';
+    if (!isFinite(res)) return res > 0 ? '\\infty' : '-\\infty';
+    if (isNaN(res)) return '\\text{NaN}';
+
+    const numStr = res.toString();
+    if (numStr.includes('e') || numStr.includes('E')) {
+      const [mantissa, exp] = numStr.toLowerCase().split('e');
       const cleanM = parseFloat(mantissa).toString();
       const expNum = parseInt(exp, 10);
-      return `${cleanM} * 10^${expNum}`;
+      return `${cleanM} \\times 10^{${expNum}}`;
+    }
+
+    if (Number.isInteger(res)) return res.toString();
+
+    const str = res.toPrecision(sigFigs);
+    if (str.includes('e') || str.includes('E')) {
+      const [mantissa, exp] = str.toLowerCase().split('e');
+      const cleanM = parseFloat(mantissa).toString();
+      const expNum = parseInt(exp, 10);
+      return `${cleanM} \\times 10^{${expNum}}`;
     }
     return parseFloat(str).toString();
   }
@@ -51,7 +85,7 @@ export function formatResult(res: any, sigFigs: number = 10): string {
   }
 
   if (res && typeof res === 'object' && 'rows' in res && Array.isArray(res.rows)) {
-    return `[${res.rows.map((row: any[]) => `[${row.map(v => formatResult(v, sigFigs)).join(', ')}]`).join(', ')}]`;
+    return `\\begin{pmatrix}${res.rows.map((row: any[]) => row.map(v => formatResult(v, sigFigs)).join(' & ')).join(' \\\\ ')}\\end{pmatrix}`;
   }
 
   return String(res);

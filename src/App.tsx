@@ -72,7 +72,8 @@ export default function App() {
                 {[
                   { label: "2/3 + 1/3 (yields 1)", expr: "\\frac{2}{3} + \\frac{1}{3}" },
                   { label: "e^{iπ} (yields -1)", expr: "e^{i\\pi}" },
-                  { label: "10^1000 (scientific notation)", expr: "1 \\cdot 10^{1000}" },
+                  { label: "10^100 (LaTeX 10¹⁰⁰)", expr: "10^{100}" },
+                  { label: "10^1000 (LaTeX 10¹⁰⁰⁰)", expr: "10^{1000}" },
                   { label: "10^-1000 (scientific notation)", expr: "1 \\cdot 10^{-1000}" },
                   { label: "∫ x dx + 2 (yields 2.5)", expr: "\\int_0^1 x \\, dx + 2" },
                   { label: "∫ x² dx (yields 2.666666667)", expr: "\\int_0^2 x^2 \\, dx" },
