@@ -6,14 +6,18 @@ import React, {
   useMemo,
 } from "react";
 import { normalizeLatex } from "@latex-math/core";
+import { useLatexEvaluation } from "./useLatexEvaluation";
 
 export interface LatexInputProps {
   value: string;
+  variables: { [key: string]: number };
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
   showToolbar?: boolean;
   showLatexBadge?: boolean;
+  showKeyboard?: boolean;
+  showMenu?: boolean;
 }
 
 const MATH_BUTTONS = [
@@ -33,17 +37,22 @@ const MATH_BUTTONS = [
 
 export const LatexInput: React.FC<LatexInputProps> = ({
   value,
+  variables,
   onChange,
   className = "",
   placeholder = "\\text{Type math... }",
   showToolbar = true,
   showLatexBadge = true,
+  showKeyboard = true,
+  showMenu = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mfRef = useRef<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isRawMode, setIsRawMode] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const { result, error } = useLatexEvaluation(value, variables);
 
   const explicitLatex = useMemo(() => {
     try {
@@ -78,6 +87,14 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       if (!mf) {
         mf = document.createElement("math-field");
         mf.setAttribute("virtual-keyboard-mode", "manual");
+        // mf.setAttribute(
+        //   "virtual-keyboard-mode",
+        //   showKeyboard ? "manual" : "off",
+        // );
+        // if (!showMenu) {
+        //   mf.setAttribute("menu-items", "none");
+        // }
+
         mf.style.width = "100%";
         mf.style.minHeight = "52px";
         mf.style.fontSize = "1.4rem";
@@ -109,6 +126,16 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       active = false;
     };
   }, []);
+
+  // useEffect(() => {
+  //   if (mfRef.current) {
+  //     mfRef.current.setAttribute(
+  //       "virtual-keyboard-mode",
+  //       showKeyboard ? "manual" : "off",
+  //     );
+  //     mfRef.current.setAttribute("menu-items", showMenu ? "all" : "none");
+  //   }
+  // }, [showKeyboard, showMenu]);
 
   // Synchronize external value changes to MathField
   useEffect(() => {
@@ -148,11 +175,17 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   }, [value]);
 
   return (
-    <div className={`flex flex-col gap-2 w-full ${className}`}>
+    <div
+      className={`flex flex-col gap-2 w-full ${className} ${
+        showKeyboard
+          ? ""
+          : "[&_math-field::part(virtual-keyboard-toggle)]:hidden"
+      } ${showMenu ? "" : "[&_math-field::part(menu-toggle)]:hidden"}`}
+    >
       {/* Main Input Frame */}
       <div className="relative border border-neutral-300 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden">
         {/* Top bar with mode toggle and clear button */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-50/80 border-b border-neutral-100 text-xs text-neutral-500">
+        {/* <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-50/80 border-b border-neutral-100 text-xs text-neutral-500">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-neutral-600">Math Input</span>
             <span className="text-neutral-400">|</span>
@@ -181,17 +214,48 @@ export const LatexInput: React.FC<LatexInputProps> = ({
               </button>
             )}
           </div>
-        </div>
+        </div> */}
 
         {/* Live Input Field */}
-        <div className="p-2 min-h-[56px] flex items-center">
-          {
-            <div
-              ref={containerRef}
-              className="w-full"
-              onClick={() => mfRef.current?.focus()}
-            />
-          }
+        {/* <div className="p-2 min-h-[56px] flex items-center">
+          <div
+            ref={containerRef}
+            className="w-full"
+            onClick={() => mfRef.current?.focus()}
+          />
+          <div className="h-1/2 w-1/2 ml-auto p-4 rounded-xl border bg-neutral-900 text-xl font-mono font-bold flex flex-col items-center justify-end shadow-xs">
+            {error ? (
+              <span className="text-red-400 font-sans text-sm">
+                Error: {error}
+              </span>
+            ) : (
+              <span className="text-emerald-400 ml-auto">
+                = {result !== null ? result : "—"}
+              </span>
+            )}
+          </div>
+        </div> */}
+
+        <div className="relative p-2 min-h-[56px] flex items-center">
+          {/* Math Field Container */}
+          <div
+            ref={containerRef}
+            className="w-full"
+            onClick={() => mfRef.current?.focus()}
+          />
+
+          {/* Bottom-Right Result Overlay */}
+          <div className="absolute bottom-2 right-2 h-1/2 w-1/3 p-2 rounded-xl border bg-neutral-900 text-xl font-mono font-bold flex flex-col items-end justify-end shadow-xs pointer-events-none">
+            {error ? (
+              <span className="text-red-400 font-sans text-sm">
+                Error: {error}
+              </span>
+            ) : (
+              <span className="text-emerald-400">
+                = {result !== null ? result : "—"}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* math toolbar */}

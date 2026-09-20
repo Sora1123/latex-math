@@ -49,10 +49,15 @@ export default function App() {
                   Math Input:
                 </label>
               </div>
-              
+
               <LatexInput
                 value={value}
+                variables={variables}
                 onChange={setValue}
+                showKeyboard={false}
+                showMenu={false}
+                showLatexBadge={false}
+                showToolbar={false}
               />
 
               <div className="p-4 rounded-xl border bg-neutral-900 text-white flex items-center justify-between shadow-xs">
