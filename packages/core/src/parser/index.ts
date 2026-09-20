@@ -20,6 +20,10 @@ function extractDx(expr: Expression): { integrand: Expression; variable: string 
 export function parseLatex(input: string): Expression {
   const normalized = normalizeLatex(input);
   const tokens = tokenize(normalized);
+  return parseLatexTokens(tokens);
+}
+
+export function parseLatexTokens(tokens: Token[]): Expression {
   let current = 0;
 
   function peek(): Token {
@@ -419,23 +423,63 @@ export function parseLatex(input: string): Expression {
       if (token.value === '\\int') {
         let lowerBound: Expression | null = null;
         let upperBound: Expression | null = null;
-        if (peek().type === TokenType.Underscore) {
-          consume();
-          lowerBound = peek().type === TokenType.LeftBrace ? parsePrimary() : parsePrimary();
-        }
-        if (peek().type === TokenType.Caret) {
-          consume();
-          upperBound = peek().type === TokenType.LeftBrace ? parsePrimary() : parsePrimary();
+
+        for (let i = 0; i < 2; i++) {
+          if (peek().type === TokenType.Underscore && !lowerBound) {
+            consume();
+            lowerBound = parsePrimary();
+          } else if (peek().type === TokenType.Caret && !upperBound) {
+            consume();
+            upperBound = parsePrimary();
+          }
         }
 
-        const body = parseExpression();
-        const extracted = extractDx(body);
-        let integrand = body;
+        // Look ahead for differential: e.g. token 'd' followed by identifier token ('x', 'y', 't', etc.) at depth 0
+        let diffIdx = -1;
+        let diffLen = 0;
+        let diffVar = 'x';
+        let depth = 0;
+
+        for (let i = current; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t.type === TokenType.EOF) break;
+          if (t.type === TokenType.LeftParen || t.type === TokenType.LeftBracket || t.type === TokenType.LeftBrace) {
+            depth++;
+          } else if (t.type === TokenType.RightParen || t.type === TokenType.RightBracket || t.type === TokenType.RightBrace) {
+            depth--;
+          } else if (depth === 0) {
+            if (t.type === TokenType.Identifier && t.value === 'd' && i + 1 < tokens.length && tokens[i + 1].type === TokenType.Identifier) {
+              diffIdx = i;
+              diffLen = 2;
+              diffVar = tokens[i + 1].value;
+              break;
+            }
+          }
+        }
+
+        let integrand: Expression;
         let variable = 'x';
-        
-        if (extracted) {
-          integrand = extracted.integrand;
-          variable = extracted.variable;
+
+        if (diffIdx !== -1) {
+          if (diffIdx === current) {
+            integrand = { type: 'Number', value: 1 };
+          } else {
+            const integrandTokens = [
+              ...tokens.slice(current, diffIdx),
+              { type: TokenType.EOF, value: '', position: tokens[diffIdx]?.position ?? 0 }
+            ];
+            integrand = parseLatexTokens(integrandTokens);
+          }
+          current = diffIdx + diffLen;
+          variable = diffVar;
+        } else {
+          const body = parseExpression();
+          const extracted = extractDx(body);
+          integrand = body;
+          if (extracted) {
+            integrand = extracted.integrand;
+            variable = extracted.variable;
+          }
         }
 
         return { type: 'Integral', variable, lowerBound, upperBound, expression: integrand };

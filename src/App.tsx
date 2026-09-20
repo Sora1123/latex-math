@@ -58,7 +58,35 @@ export default function App() {
                 showMenu={false}
                 showLatexBadge={false}
                 showToolbar={false}
+                inputWrapperClassName="border-neutral-200 hover:border-neutral-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
+                mathFieldContainerClassName="text-lg"
               />
+            </div>
+
+            {/* Quick Test Presets */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                Quick Test Expressions:
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "2/3 + 1/3 (yields 1)", expr: "\\frac{2}{3} + \\frac{1}{3}" },
+                  { label: "e^{iπ} (yields -1)", expr: "e^{i\\pi}" },
+                  { label: "10^1000 (scientific notation)", expr: "1 \\cdot 10^{1000}" },
+                  { label: "10^-1000 (scientific notation)", expr: "1 \\cdot 10^{-1000}" },
+                  { label: "∫ x dx + 2 (yields 2.5)", expr: "\\int_0^1 x \\, dx + 2" },
+                  { label: "∫ x² dx (yields 2.666666667)", expr: "\\int_0^2 x^2 \\, dx" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setValue(item.expr)}
+                    className="px-2.5 py-1 text-xs font-medium rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 pt-4">

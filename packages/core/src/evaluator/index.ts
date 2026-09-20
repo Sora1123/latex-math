@@ -1,7 +1,10 @@
 import { Expression } from '../ast/index.js';
 import { parseLatex } from '../parser/index.js';
-import { MathValue, mathAdd, mathSub, mathMul, mathDiv, mathPow, Complex, MatrixValue } from '../math/index.js';
+import { MathValue, mathAdd, mathSub, mathMul, mathDiv, mathPow, Complex, MatrixValue, SciNumber } from '../math/index.js';
 import { EvaluationError, DimensionMismatchError, DivisionByZeroError, UndefinedVariableError } from '../errors/index.js';
+
+export { SciNumber, Complex, MatrixValue };
+export type { MathValue };
 
 export interface EvalOptions {
   variables?: Record<string, MathValue>;
@@ -176,7 +179,7 @@ export function evaluate(node: Expression, options: EvalOptions = {}): MathValue
           const weight = (i === 0 || i === steps) ? 1 : (i % 2 === 0 ? 2 : 4);
           sum += weight * val;
         }
-        return (sum * h) / 3;
+        return cleanFloat((sum * h) / 3);
       }
       throw new EvaluationError("Cannot numerically evaluate indefinite integral");
     }

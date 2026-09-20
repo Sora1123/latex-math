@@ -73,6 +73,45 @@ export function tokenize(input: string): Token[] {
         continue;
       }
 
+      if (['\\mathrm', '\\mathbf', '\\mathit', '\\text', '\\operatorname'].includes(value)) {
+        continue;
+      }
+
+      if (value === '\\dx') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 'x', position: start + 2 });
+        continue;
+      }
+      if (value === '\\dy') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 'y', position: start + 2 });
+        continue;
+      }
+      if (value === '\\dt') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 't', position: start + 2 });
+        continue;
+      }
+      if (value === '\\du') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 'u', position: start + 2 });
+        continue;
+      }
+      if (value === '\\dv') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 'v', position: start + 2 });
+        continue;
+      }
+      if (value === '\\dz') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        tokens.push({ type: TokenType.Identifier, value: 'z', position: start + 2 });
+        continue;
+      }
+      if (value === '\\differentialD') {
+        tokens.push({ type: TokenType.Identifier, value: 'd', position: start });
+        continue;
+      }
+
       tokens.push({ type: TokenType.Command, value, position: start });
       continue;
     }

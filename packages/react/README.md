@@ -119,10 +119,15 @@ export function Calculator() {
 |---|---|---|---|
 | `value` | `string` | *(required)* | Current LaTeX string value |
 | `onChange` | `(value: string) => void` | *(required)* | Callback fired when the expression changes |
+| `variables` | `Record<string, number>` | `{}` | Variable scope for live evaluation |
 | `placeholder` | `string` | `"\text{Type math... }"` | Placeholder displayed inside empty math field |
 | `showToolbar` | `boolean` | `true` | Displays quick math buttons (fractions, powers, roots, calculus, trig) |
 | `showLatexBadge` | `boolean` | `true` | Displays bottom bar showing the underlying LaTeX string and copy action |
+| `showEvaluatedResult` | `boolean` | `true` | Shows evaluated answer on the right |
 | `className` | `string` | `""` | Container styling class |
+| `inputWrapperClassName` | `string` | `""` | Outer border/frame wrapper styling class |
+| `mathFieldContainerClassName` | `string` | `""` | Div wrapping the math-field element styling class |
+| `resultClassName` | `string` | `""` | Evaluated answer div styling class |
 
 ### `<LatexExpression />`
 

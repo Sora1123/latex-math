@@ -11,6 +11,13 @@
 export function normalizeLatex(input: string): string {
   if (!input || typeof input !== 'string') return '';
 
+  input = input
+    .replace(/\\dx(?![a-zA-Z])/g, ' \\, dx ')
+    .replace(/\\dy(?![a-zA-Z])/g, ' \\, dy ')
+    .replace(/\\dt(?![a-zA-Z])/g, ' \\, dt ')
+    .replace(/\\differentialD(?![a-zA-Z])/g, ' d ')
+    .replace(/\\mathrm\{([a-zA-Z]+)\}/g, '$1');
+
   let i = 0;
 
   function skipWhitespace(): void {

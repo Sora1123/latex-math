@@ -46,6 +46,19 @@ describe('Phase 5 - Calculus', () => {
       const val = evaluateLatex('\\int_0^1 x^2 \\, dx') as number;
       expect(val).toBeCloseTo(1/3, 5);
     });
+
+    it('evaluates definite integral with addition after dx', () => {
+      const val = evaluateLatex('\\int_0^1 x \\, dx + 2') as number;
+      expect(val).toBeCloseTo(2.5, 5);
+    });
+
+    it('evaluates definite integral with \\dx and expressions after', () => {
+      const val1 = evaluateLatex('\\int_0^1 x \\dx + 2') as number;
+      expect(val1).toBeCloseTo(2.5, 5);
+
+      const val2 = evaluateLatex('\\int_0^1 x \\dx2') as number;
+      expect(val2).toBeCloseTo(1.0, 5);
+    });
   });
 
   describe('Derivative parsing', () => {

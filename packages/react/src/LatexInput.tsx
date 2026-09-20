@@ -10,9 +10,12 @@ import { useLatexEvaluation } from "./useLatexEvaluation";
 
 export interface LatexInputProps {
   value: string;
-  variables: { [key: string]: number };
+  variables?: { [key: string]: number };
   onChange: (value: string) => void;
   className?: string;
+  inputWrapperClassName?: string;
+  mathFieldContainerClassName?: string;
+  resultClassName?: string;
   placeholder?: string;
   showToolbar?: boolean;
   showLatexBadge?: boolean;
@@ -41,6 +44,9 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   variables,
   onChange,
   className = "",
+  inputWrapperClassName = "",
+  mathFieldContainerClassName = "",
+  resultClassName = "",
   placeholder = "\\text{Type math... }",
   showToolbar = true,
   showLatexBadge = true,
@@ -118,6 +124,68 @@ export const LatexInput: React.FC<LatexInputProps> = ({
           const val = (ev.target as any).value;
           onChange(val);
         });
+
+        mf.addEventListener("keydown", (ev: KeyboardEvent) => {
+          if (ev.key === "Backspace") {
+            const mathfield = (mf as any)._mathfield;
+            const model = mathfield?.model;
+            if (!model) return;
+
+            const pos = model.position;
+            const target = model.at(pos);
+            const parent = target?.parent;
+
+            const isInt = (a: any) =>
+              a && (a.command === "\\int" || a.type === "integral");
+
+            let intAtom: any = null;
+            let branch = "";
+            if (isInt(parent)) {
+              intAtom = parent;
+              branch = target?.parentBranch || "";
+            } else if (isInt(target)) {
+              intAtom = target;
+            } else if (isInt(target?.rightSibling)) {
+              intAtom = target.rightSibling;
+            }
+
+            if (intAtom) {
+              const sup =
+                intAtom.superscript ||
+                (typeof intAtom.branch === "function" &&
+                  intAtom.branch("superscript"));
+              const isSupEmpty =
+                !sup ||
+                sup.length === 0 ||
+                (sup.length === 1 &&
+                  (sup[0].type === "placeholder" || sup[0].type === "first"));
+
+              if (
+                (branch === "superscript" && isSupEmpty) ||
+                (target?.rightSibling === intAtom &&
+                  (target.isFirstSibling || target.type === "first"))
+              ) {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const p = intAtom.parent;
+                const leftPos = model.offsetOf(intAtom.leftSibling);
+                if (p && typeof p.removeChild === "function") {
+                  p.removeChild(intAtom);
+                  model.position = Math.max(0, leftPos);
+                  if (typeof mathfield.render === "function") {
+                    mathfield.render();
+                  }
+                  onChange(mf.value);
+                } else {
+                  model.setSelection(leftPos, model.offsetOf(intAtom));
+                  mf.executeCommand(["deleteBackward"]);
+                  onChange(mf.value);
+                }
+              }
+            }
+          }
+        });
       }
 
       mf.setValue(value || "", { silenceNotifications: true });
@@ -185,62 +253,42 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       } ${showMenu ? "" : "[&_math-field::part(menu-toggle)]:hidden"}`}
     >
       {/* Main Input Frame */}
-      <div className="relative border border-neutral-300 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden">
-        {/* Top bar with mode toggle and clear button */}
-        {/* <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-50/80 border-b border-neutral-100 text-xs text-neutral-500">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-neutral-600">Math Input</span>
-            <span className="text-neutral-400">|</span>
-            <span className="text-neutral-400">
-              Type{" "}
-              <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">
-                /
-              </kbd>{" "}
-              for fraction,{" "}
-              <kbd className="px-1 py-0.5 bg-neutral-200/60 rounded text-[10px] font-mono">
-                ^
-              </kbd>{" "}
-              for power
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {value && (
-              <button
-                type="button"
-                onClick={clearInput}
-                className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-red-50 text-neutral-400 hover:text-red-500 transition"
-                title="Clear input"
-              >
-                ✕ Clear
-              </button>
-            )}
-          </div>
-        </div> */}
-
+      <div
+        className={`relative border border-neutral-300 rounded-xl bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden ${inputWrapperClassName}`}
+      >
         {/* Live Input Field */}
         <div className="relative p-2 min-h-[56px] flex items-center">
           {/* Math Field Container */}
           <div
             ref={containerRef}
-            className="w-full"
+            className={`w-full pr-28 ${mathFieldContainerClassName}`}
             onClick={() => mfRef.current?.focus()}
           />
 
-          {/* Bottom-Right Result Overlay */}
-          {showEvaluatedResult && 
-          <div className="absolute bottom-2 right-2 h-1/2 w-1/3 p-2 rounded-xl border bg-neutral-900 text-xl font-mono font-bold flex flex-col items-end justify-end shadow-xs pointer-events-none">
-            {error ? (
-              <span className="text-red-400 font-sans text-sm">
-                Error: {error}
-              </span>
-            ) : (
-              <span className="text-emerald-400">
-                = {result !== null ? result : "—"}
-              </span>
-            )}
-          </div>
-          }
+          {/* Evaluated Result Overlay */}
+          {showEvaluatedResult && (
+            <div
+              className={
+                resultClassName ||
+                "absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-end pointer-events-none z-10 select-none"
+              }
+            >
+              {error ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200/80 text-amber-800 text-xs font-sans font-medium shadow-2xs">
+                  <span>{error}</span>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-1.5 text-neutral-800 font-sans">
+                  <span className="text-neutral-400 text-base font-light select-none">
+                    =
+                  </span>
+                  <span className="text-xl font-medium tracking-tight font-mono text-neutral-800 select-all">
+                    {result !== null ? result : "—"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
 

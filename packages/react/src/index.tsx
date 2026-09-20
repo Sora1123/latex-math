@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { parseLatex, evaluateLatex, EvaluationError, LatexParseError } from '@latex-math/core';
+import { formatResult } from './useLatexEvaluation.js';
 
 export * from './LatexExpression.js';
 export * from './LatexInput.js';
@@ -26,12 +27,7 @@ export const MathInput: React.FC<MathInputProps> = ({ value, onChange, className
     try {
       const ast = parseLatex(value);
       const res = evaluateLatex(ast, { variables });
-      
-      if (typeof res === 'number') setResult(res);
-      else if ('re' in res) setResult(`${(res as any).re} + ${(res as any).im}i`);
-      else if ('rows' in res) setResult(`Matrix[${(res as any).rows.length}x${(res as any).rows[0].length}]`);
-      else setResult(String(res));
-      
+      setResult(formatResult(res, 10));
       setError(null);
     } catch (err: any) {
       setError(err.message);
