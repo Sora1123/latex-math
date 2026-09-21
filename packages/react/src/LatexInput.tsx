@@ -96,6 +96,14 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       if (!mf) {
         mf = document.createElement("math-field");
         mf.setAttribute("virtual-keyboard-mode", "manual");
+        // mf.setAttribute(
+        //   "virtual-keyboard-mode",
+        //   showKeyboard ? "manual" : "off",
+        // );
+        // if (!showMenu) {
+        //   mf.setAttribute("menu-items", "none");
+        // }
+
         mf.style.width = "100%";
         mf.style.minHeight = "52px";
         mf.style.fontSize = "1.4rem";
@@ -250,7 +258,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         className={`relative border border-neutral-300 rounded-xl bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden ${inputWrapperClassName}`}
       >
         {/* Live Input Field */}
-        <div className={`relative p-2.5 "min-h-[56px]" flex flex-col justify-start`}>
+        <div className={`relative p-2.5 min-h-[56px] flex flex-col justify-start`}>
           {/* Math Field Container */}
           <div
             ref={containerRef}
@@ -258,12 +266,12 @@ export const LatexInput: React.FC<LatexInputProps> = ({
             onClick={() => mfRef.current?.focus()}
           />
 
-          {/* Evaluated Result Box (bottom-right corner) */}
+          {/* Evaluated Result Box (bottom-left corner) */}
           {showEvaluatedResult && (
             <div
               className={
                 resultClassName ||
-                "absolute right-3 bottom-2 flex items-center pointer-events-none z-10 select-none"
+                "absolute right-2 bottom-2 flex items-center pointer-events-none z-10 select-none"
               }
             >
               {error ? (

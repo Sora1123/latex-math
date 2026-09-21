@@ -58,7 +58,7 @@ export default function App() {
                 showMenu={false}
                 showLatexBadge={false}
                 showToolbar={false}
-                inputWrapperClassName="border-neutral-200 hover:border-neutral-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 "
+                inputWrapperClassName="border-neutral-200 hover:border-neutral-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
                 mathFieldContainerClassName="text-lg"
               />
             </div>
