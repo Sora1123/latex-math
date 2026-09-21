@@ -14,8 +14,17 @@ export interface LatexInputProps {
   variables?: { [key: string]: number };
   onChange: (value: string) => void;
   className?: string;
+  /**
+   * Styling class for the math input box.
+   * Can be passed via inputWrapperClassName or mathFieldClassName (combined for the same box).
+   */
   inputWrapperClassName?: string;
+  mathFieldClassName?: string;
+  mathfieldClassName?: string;
   mathFieldContainerClassName?: string;
+  /**
+   * Styling class for the evaluated result badge (e.g. bg-*, text-*, border-*, or custom positioning).
+   */
   resultClassName?: string;
   placeholder?: string;
   showToolbar?: boolean;
@@ -23,6 +32,92 @@ export interface LatexInputProps {
   showKeyboard?: boolean;
   showMenu?: boolean;
   showEvaluatedResult?: boolean;
+}
+
+function getBoxClasses(customClasses: string = ""): {
+  boxClasses: string;
+  hasCustomBg: boolean;
+} {
+  const hasCustomBg = /\bbg-\S+/.test(customClasses);
+  const hasBorder = /\bborder-\S+/.test(customClasses);
+  const hasRounded = /\brounded-\S+/.test(customClasses);
+  const hasShadow = /\bshadow-\S+/.test(customClasses);
+  const hasRing = /\b(ring-|focus-within:ring-)\S+/.test(customClasses);
+  const hasTextColor = /\btext-(?!xs\b|sm\b|base\b|lg\b|xl\b|[2-9]xl\b)\S+/.test(customClasses);
+  const hasTextSize = /\btext-(xs|sm|base|lg|xl|[2-9]xl)\b/.test(customClasses);
+
+  const boxClasses = [
+    "relative transition-all overflow-hidden",
+    hasBorder ? "" : "border border-neutral-300",
+    hasRounded ? "" : "rounded-xl",
+    hasCustomBg ? "" : "bg-white",
+    hasShadow ? "" : "shadow-xs",
+    hasRing ? "" : "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
+    hasTextColor ? "" : "text-neutral-900",
+    hasTextSize ? "" : "text-lg",
+    customClasses,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return { boxClasses, hasCustomBg };
+}
+
+function getResultClasses(resultClassName: string = ""): {
+  containerClasses: string;
+  badgeClasses: string;
+  hasCustomText: boolean;
+  hasCustomBg: boolean;
+} {
+  const words = resultClassName.split(/\s+/).filter(Boolean);
+  const posWords = words.filter((w) =>
+    /^(top-|bottom-|left-|right-|static|relative|absolute|fixed)/.test(w)
+  );
+  const styleWords = words.filter(
+    (w) =>
+      !/^(top-|bottom-|left-|right-|static|relative|absolute|fixed)/.test(w)
+  );
+
+  const hasExplicitPositionType = posWords.some((w) =>
+    /^(static|relative|absolute|fixed)$/.test(w)
+  );
+  const hasExplicitHorizontal = posWords.some((w) => /^(left-|right-)/.test(w));
+  const hasExplicitVertical = posWords.some((w) => /^(top-|bottom-)/.test(w));
+
+  const containerClasses = [
+    hasExplicitPositionType ? "" : "absolute",
+    hasExplicitHorizontal ? "" : "right-2",
+    hasExplicitVertical ? "" : "bottom-2",
+    ...posWords,
+    "flex items-center pointer-events-none z-10 select-none",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const styleClassString = styleWords.join(" ");
+  const hasCustomBg = /\bbg-\S+/.test(styleClassString);
+  const hasCustomBorder = /\bborder-\S+/.test(styleClassString);
+  const hasCustomRounded = /\brounded-\S+/.test(styleClassString);
+  const hasCustomShadow = /\bshadow-\S+/.test(styleClassString);
+  const hasCustomText = /\btext-(?!xs\b|sm\b|base\b|lg\b|xl\b|[2-9]xl\b)\S+/.test(
+    styleClassString
+  );
+  const hasCustomBackdrop = /\bbackdrop-\S+/.test(styleClassString);
+
+  const badgeClasses = [
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 text-sm",
+    hasCustomRounded ? "" : "rounded-lg",
+    hasCustomShadow ? "" : "shadow-2xs",
+    hasCustomBackdrop ? "" : "backdrop-blur-xs",
+    hasCustomBorder ? "" : "border border-neutral-200/90",
+    hasCustomBg ? "" : "bg-neutral-50/95",
+    hasCustomText ? "" : "text-neutral-800",
+    styleClassString,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return { containerClasses, badgeClasses, hasCustomText, hasCustomBg };
 }
 
 const MATH_BUTTONS = [
@@ -46,6 +141,8 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   onChange,
   className = "",
   inputWrapperClassName = "",
+  mathFieldClassName = "",
+  mathfieldClassName = "",
   mathFieldContainerClassName = "",
   resultClassName = "",
   placeholder = "\\text{Type math... }",
@@ -61,6 +158,28 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   const [isRawMode, setIsRawMode] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Combine inputWrapper and mathField classNames as they target the same box
+  const combinedInputClassName = [
+    inputWrapperClassName,
+    mathFieldClassName,
+    mathfieldClassName,
+    mathFieldContainerClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const { boxClasses, hasCustomBg } = useMemo(
+    () => getBoxClasses(combinedInputClassName),
+    [combinedInputClassName]
+  );
+
+  const {
+    containerClasses: resultContainerClasses,
+    badgeClasses: resultBadgeClasses,
+    hasCustomText: hasResultText,
+    hasCustomBg: hasResultBg,
+  } = useMemo(() => getResultClasses(resultClassName), [resultClassName]);
+
   const { result, error } = useLatexEvaluation(value, variables);
 
   const explicitLatex = useMemo(() => {
@@ -74,6 +193,15 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   const hasImplicitGrouping = Boolean(
     value && explicitLatex && explicitLatex !== value,
   );
+
+  // Update mathfield padding dynamically when showEvaluatedResult changes
+  useEffect(() => {
+    if (mfRef.current) {
+      mfRef.current.style.padding = showEvaluatedResult
+        ? "0.5rem 5rem 0.5rem 0.75rem"
+        : "0.5rem 0.75rem";
+    }
+  }, [showEvaluatedResult]);
 
   // Initialize MathLive custom element
   useEffect(() => {
@@ -96,22 +224,18 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       if (!mf) {
         mf = document.createElement("math-field");
         mf.setAttribute("virtual-keyboard-mode", "manual");
-        // mf.setAttribute(
-        //   "virtual-keyboard-mode",
-        //   showKeyboard ? "manual" : "off",
-        // );
-        // if (!showMenu) {
-        //   mf.setAttribute("menu-items", "none");
-        // }
 
         mf.style.width = "100%";
-        mf.style.minHeight = "52px";
-        mf.style.fontSize = "1.4rem";
-        mf.style.padding = "0.625rem 0.875rem";
+        mf.style.minHeight = "48px";
+        mf.style.fontSize = "inherit";
+        mf.style.padding = showEvaluatedResult
+          ? "0.5rem 5rem 0.5rem 0.75rem"
+          : "0.5rem 0.75rem";
         mf.style.outline = "none";
         mf.style.border = "none";
         mf.style.background = "transparent";
-        mf.style.color = "#171717";
+        mf.style.color = "inherit";
+        mf.style.setProperty("--color", "inherit");
         mf.style.display = "block";
 
         if (placeholder) {
@@ -253,61 +377,81 @@ export const LatexInput: React.FC<LatexInputProps> = ({
           : "[&_math-field::part(virtual-keyboard-toggle)]:hidden"
       } ${showMenu ? "" : "[&_math-field::part(menu-toggle)]:hidden"}`}
     >
-      {/* Main Input Frame */}
-      <div
-        className={`relative border border-neutral-300 rounded-xl bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all overflow-hidden ${inputWrapperClassName}`}
-      >
+      {/* Main Input Frame (Combined inputWrapper + mathField) */}
+      <div className={boxClasses}>
         {/* Live Input Field */}
-        <div className={`relative p-2.5 min-h-[56px] flex flex-col justify-start`}>
+        <div className="relative p-1 min-h-[52px] flex flex-col justify-start">
           {/* Math Field Container */}
           <div
             ref={containerRef}
-            className={`w-full ${mathFieldContainerClassName}`}
+            className="w-full bg-transparent"
             onClick={() => mfRef.current?.focus()}
           />
 
-          {/* Evaluated Result Box (bottom-left corner) */}
+          {/* Evaluated Result Box */}
           {showEvaluatedResult && (
-            <div
-              className={
-                resultClassName ||
-                "absolute right-2 bottom-2 flex items-center pointer-events-none z-10 select-none"
-              }
-            >
+            <div className={resultContainerClasses}>
               {error ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-50 border border-amber-200/90 text-amber-800 text-xs font-sans font-medium shadow-2xs">
+                <div
+                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-sans font-medium shadow-2xs border border-amber-200/90 ${
+                    hasResultBg ? "" : "bg-amber-50"
+                  } ${
+                    hasResultText ? "" : "text-amber-800"
+                  } ${resultBadgeClasses}`}
+                >
                   <span>{error}</span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border border-neutral-200/90 bg-neutral-50/95 text-neutral-800 shadow-2xs backdrop-blur-xs text-sm">
-                  <span className="text-neutral-400 font-normal select-none text-xs">
+                <div className={resultBadgeClasses}>
+                  <span
+                    className={`${
+                      hasResultText ? "opacity-60" : "text-neutral-400"
+                    } font-normal select-none text-xs`}
+                  >
                     =
                   </span>
                   {result !== null ? (
                     <LatexExpression
                       expression={result}
-                      className="text-neutral-900 font-medium"
+                      className={`${
+                        hasResultText ? "" : "text-neutral-900"
+                      } font-medium`}
                     />
                   ) : (
-                    <span className="text-neutral-400 text-xs font-mono">—</span>
+                    <span
+                      className={`${
+                        hasResultText ? "opacity-60" : "text-neutral-400"
+                      } text-xs font-mono`}
+                    >
+                      —
+                    </span>
                   )}
                 </div>
               )}
             </div>
           )}
         </div>
-        
 
         {/* math toolbar */}
         {showToolbar && (
-          <div className="flex items-center gap-1 px-2 py-1.5 bg-neutral-50/60 border-t border-neutral-100 overflow-x-auto">
+          <div
+            className={`flex items-center gap-1 px-2 py-1.5 overflow-x-auto ${
+              hasCustomBg
+                ? "bg-black/10 border-t border-current/15"
+                : "bg-neutral-50/60 border-t border-neutral-100"
+            }`}
+          >
             {MATH_BUTTONS.map((btn) => (
               <button
                 key={btn.label}
                 type="button"
                 onClick={() => insertTemplate(btn.latex)}
                 title={btn.title}
-                className="px-2.5 py-1 text-xs font-semibold text-neutral-700 bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-neutral-200 rounded-md shadow-2xs transition-colors shrink-0"
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md shadow-2xs transition-colors shrink-0 ${
+                  hasCustomBg
+                    ? "bg-white/10 hover:bg-white/20 text-inherit border border-current/20"
+                    : "text-neutral-700 bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 border border-neutral-200"
+                }`}
               >
                 {btn.label}
               </button>

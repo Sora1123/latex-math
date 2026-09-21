@@ -9,6 +9,35 @@ import { parseLatex } from '@latex-math/core';
 
 export default function App() {
   const [value, setValue] = useState('\\frac{2}{3} + \\int_0^2 x^2 \\, dx');
+  const [theme, setTheme] = useState<'default' | 'amber' | 'dark' | 'indigo' | 'emerald'>('default');
+
+  const themes = {
+    default: {
+      name: 'Default',
+      input: 'border-neutral-200 hover:border-neutral-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 text-lg',
+      result: '',
+    },
+    amber: {
+      name: 'Warm Amber',
+      input: 'bg-amber-50/90 border-amber-300 text-amber-950 text-lg',
+      result: 'bg-amber-200/90 text-amber-900 border-amber-400',
+    },
+    dark: {
+      name: 'Slate Dark',
+      input: 'bg-neutral-900 text-white border-neutral-700 shadow-md text-lg',
+      result: 'bg-neutral-800 text-neutral-100 border-neutral-700',
+    },
+    indigo: {
+      name: 'Indigo & Accent',
+      input: 'bg-indigo-50/70 border-indigo-200 text-indigo-950 text-lg',
+      result: 'bg-indigo-600 text-white border-indigo-700',
+    },
+    emerald: {
+      name: 'Mint Emerald',
+      input: 'bg-emerald-50/70 border-emerald-300 text-emerald-950 text-lg',
+      result: 'bg-emerald-600 text-white border-emerald-700',
+    },
+  };
 
   // Let's provide some variables
   const variables = {
@@ -37,10 +66,30 @@ export default function App() {
         </header>
 
         <section className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-neutral-100 bg-neutral-50/50">
+          <div className="p-6 border-b border-neutral-100 bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               Interactive Playground
             </h2>
+            {/* Background / Style test switcher */}
+            <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-lg">
+              <span className="text-xs font-semibold text-neutral-500 px-1.5 select-none">
+                Style:
+              </span>
+              {(Object.keys(themes) as Array<keyof typeof themes>).map((tKey) => (
+                <button
+                  key={tKey}
+                  type="button"
+                  onClick={() => setTheme(tKey)}
+                  className={`px-2.5 py-0.5 text-xs font-medium rounded-md transition cursor-pointer ${
+                    theme === tKey
+                      ? "bg-white text-neutral-900 shadow-2xs font-semibold"
+                      : "text-neutral-600 hover:text-neutral-900"
+                  }`}
+                >
+                  {themes[tKey].name}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="p-6 space-y-6">
             <div className="space-y-4">
@@ -58,8 +107,8 @@ export default function App() {
                 showMenu={false}
                 showLatexBadge={false}
                 showToolbar={false}
-                inputWrapperClassName="border-neutral-200 hover:border-neutral-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
-                mathFieldContainerClassName="text-lg"
+                inputWrapperClassName={themes[theme].input}
+                resultClassName={themes[theme].result}
               />
             </div>
 

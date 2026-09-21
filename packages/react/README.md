@@ -124,10 +124,11 @@ export function Calculator() {
 | `showToolbar` | `boolean` | `true` | Displays quick math buttons (fractions, powers, roots, calculus, trig) |
 | `showLatexBadge` | `boolean` | `true` | Displays bottom bar showing the underlying LaTeX string and copy action |
 | `showEvaluatedResult` | `boolean` | `true` | Shows evaluated answer on the right |
-| `className` | `string` | `""` | Container styling class |
-| `inputWrapperClassName` | `string` | `""` | Outer border/frame wrapper styling class |
-| `mathFieldContainerClassName` | `string` | `""` | Div wrapping the math-field element styling class |
-| `resultClassName` | `string` | `""` | Evaluated answer div styling class |
+| `className` | `string` | `""` | Root container styling class |
+| `inputWrapperClassName` | `string` | `""` | Math input box styling class (supports custom `bg-*`, `border-*`, `text-*`, `rounded-*`) |
+| `mathFieldClassName` | `string` | `""` | Alias for `inputWrapperClassName` (combined onto the same math input box) |
+| `mathFieldContainerClassName` | `string` | `""` | Backwards-compatible alias for `inputWrapperClassName` |
+| `resultClassName` | `string` | `""` | Evaluated result badge styling (supports custom `bg-*`, `text-*`, `border-*`, and corner positioning) |
 
 ### `<LatexExpression />`
 
