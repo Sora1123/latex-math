@@ -447,6 +447,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
                   {result !== null ? (
                     <LatexExpression
                       expression={result}
+                      output="html"
                       className={`${
                         hasResultText ? "" : "text-neutral-900"
                       } font-medium`}

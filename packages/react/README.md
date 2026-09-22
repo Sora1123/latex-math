@@ -173,6 +173,7 @@ export function Calculator() {
 |---|---|---|---|
 | `expression` | `string` | *(required)* | The LaTeX string to render |
 | `displayMode` | `boolean` | `true` | Whether to render as centered display mode (`true`) or inline (`false`) |
+| `output` | `"html"` \| `"htmlAndMathml"` \| `"mathml"` | `"html"` | Markup output format (defaults to `"html"` to avoid duplicate MathML rendering) |
 | `className` | `string` | `""` | Additional CSS class names |
 
 ### `useLatexEvaluation(expression, options)`
