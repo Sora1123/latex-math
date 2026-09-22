@@ -32,6 +32,11 @@ export interface LatexInputProps {
   showKeyboard?: boolean;
   showMenu?: boolean;
   showEvaluatedResult?: boolean;
+  /**
+   * Directory where MathLive fonts are located.
+   * Defaults to unpkg CDN ("https://unpkg.com/mathlive@0.110.0/dist/fonts/") to avoid Next.js/Webpack chunk 404s.
+   */
+  fontsDirectory?: string;
 }
 
 function getBoxClasses(customClasses: string = ""): {
@@ -86,7 +91,7 @@ function getResultClasses(resultClassName: string = ""): {
 
   const containerClasses = [
     hasExplicitPositionType ? "" : "absolute",
-    hasExplicitHorizontal ? "" : "right-2",
+    hasExplicitHorizontal ? "" : "right-3",
     hasExplicitVertical ? "" : "bottom-2",
     ...posWords,
     "flex items-center pointer-events-none z-10 select-none",
@@ -151,6 +156,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   showKeyboard = true,
   showMenu = true,
   showEvaluatedResult = true,
+  fontsDirectory,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mfRef = useRef<any>(null);
@@ -194,15 +200,6 @@ export const LatexInput: React.FC<LatexInputProps> = ({
     value && explicitLatex && explicitLatex !== value,
   );
 
-  // Update mathfield padding dynamically when showEvaluatedResult changes
-  useEffect(() => {
-    if (mfRef.current) {
-      mfRef.current.style.padding = showEvaluatedResult
-        ? "0.5rem 5rem 0.5rem 0.75rem"
-        : "0.5rem 0.75rem";
-    }
-  }, [showEvaluatedResult]);
-
   // Synchronize showKeyboard and showMenu props with math-field element
   useEffect(() => {
     if (mfRef.current) {
@@ -218,6 +215,13 @@ export const LatexInput: React.FC<LatexInputProps> = ({
     }
   }, [showKeyboard, showMenu]);
 
+  // Synchronize fontsDirectory if prop changes dynamically
+  useEffect(() => {
+    if (typeof window !== "undefined" && fontsDirectory && (window as any).MathfieldElement) {
+      (window as any).MathfieldElement.fontsDirectory = fontsDirectory;
+    }
+  }, [fontsDirectory]);
+
   // Initialize MathLive custom element
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -227,9 +231,20 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       if (!active || !containerRef.current) return;
 
       try {
-        if (ml.MathfieldElement && !ml.MathfieldElement.fontsDirectory) {
-          ml.MathfieldElement.fontsDirectory =
-            "https://unpkg.com/mathlive/dist/fonts";
+        if (ml.MathfieldElement) {
+          const currentDir = ml.MathfieldElement.fontsDirectory;
+          if (fontsDirectory) {
+            ml.MathfieldElement.fontsDirectory = fontsDirectory;
+          } else if (
+            !currentDir ||
+            currentDir === "./fonts/" ||
+            currentDir.startsWith("./") ||
+            currentDir.includes("_next") ||
+            !currentDir.startsWith("http")
+          ) {
+            ml.MathfieldElement.fontsDirectory =
+              "https://unpkg.com/mathlive@0.110.0/dist/fonts/";
+          }
         }
       } catch {
         // fallback to default
@@ -249,9 +264,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         mf.style.width = "100%";
         mf.style.minHeight = "48px";
         mf.style.fontSize = "inherit";
-        mf.style.padding = showEvaluatedResult
-          ? "0.5rem 5rem 0.5rem 0.75rem"
-          : "0.5rem 0.75rem";
+        mf.style.padding = "0.5rem 0.75rem";
         mf.style.outline = "none";
         mf.style.border = "none";
         mf.style.background = "transparent";

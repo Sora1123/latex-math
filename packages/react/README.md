@@ -30,6 +30,40 @@ yarn add @latex-math/react @latex-math/core
 pnpm add @latex-math/react @latex-math/core
 ```
 
+### CSS Import (Required for Math Formulas)
+
+Import KaTeX styles in your root layout or application entry (`layout.tsx`, `_app.tsx`, or `main.tsx`):
+
+```tsx
+import "@latex-math/react/dist/index.css";
+// or
+import "katex/dist/katex.min.css";
+```
+
+### Using with Next.js & Tailwind CSS
+
+1. **Client Component**:
+Because `<LatexInput />` interacts with the browser's custom element DOM, ensure your component has the `"use client"` directive at the top:
+```tsx
+"use client";
+import { LatexInput } from '@latex-math/react';
+```
+
+2. **Tailwind CSS Configuration**:
+To ensure Tailwind compiles the utility classes used inside `@latex-math/react`, add the package to your `tailwind.config.js`:
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/@latex-math/react/**/*.{js,mjs,cjs}", // <-- Add this line
+  ],
+  // ...
+};
+```
+*(Or in Tailwind v4 `globals.css`: `@source "../node_modules/@latex-math/react";`)*
+
 ---
 
 ## Quick Start
@@ -123,7 +157,10 @@ export function Calculator() {
 | `placeholder` | `string` | `"\text{Type math... }"` | Placeholder displayed inside empty math field |
 | `showToolbar` | `boolean` | `true` | Displays quick math buttons (fractions, powers, roots, calculus, trig) |
 | `showLatexBadge` | `boolean` | `true` | Displays bottom bar showing the underlying LaTeX string and copy action |
-| `showEvaluatedResult` | `boolean` | `true` | Shows evaluated answer on the right |
+| `showEvaluatedResult` | `boolean` | `true` | Shows evaluated answer in the bottom-right corner of the input box |
+| `showKeyboard` | `boolean` | `true` | Controls whether the virtual keyboard toggle button is visible/active |
+| `showMenu` | `boolean` | `true` | Controls whether the MathLive contextual menu toggle button is visible |
+| `fontsDirectory` | `string` | `CDN` | Directory URL for MathLive fonts (defaults to official unpkg CDN) |
 | `className` | `string` | `""` | Root container styling class |
 | `inputWrapperClassName` | `string` | `""` | Math input box styling class (supports custom `bg-*`, `border-*`, `text-*`, `rounded-*`) |
 | `mathFieldClassName` | `string` | `""` | Alias for `inputWrapperClassName` (combined onto the same math input box) |
