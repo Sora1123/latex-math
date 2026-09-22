@@ -203,6 +203,21 @@ export const LatexInput: React.FC<LatexInputProps> = ({
     }
   }, [showEvaluatedResult]);
 
+  // Synchronize showKeyboard and showMenu props with math-field element
+  useEffect(() => {
+    if (mfRef.current) {
+      mfRef.current.setAttribute(
+        "virtual-keyboard-mode",
+        showKeyboard ? "manual" : "off"
+      );
+      if (!showMenu) {
+        mfRef.current.setAttribute("menu-items", "none");
+      } else {
+        mfRef.current.removeAttribute("menu-items");
+      }
+    }
+  }, [showKeyboard, showMenu]);
+
   // Initialize MathLive custom element
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -223,7 +238,13 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       let mf = containerRef.current.querySelector("math-field") as any;
       if (!mf) {
         mf = document.createElement("math-field");
-        mf.setAttribute("virtual-keyboard-mode", "manual");
+        mf.setAttribute(
+          "virtual-keyboard-mode",
+          showKeyboard ? "manual" : "off"
+        );
+        if (!showMenu) {
+          mf.setAttribute("menu-items", "none");
+        }
 
         mf.style.width = "100%";
         mf.style.minHeight = "48px";
