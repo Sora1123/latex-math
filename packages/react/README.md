@@ -160,6 +160,9 @@ export function Calculator() {
 | `showEvaluatedResult` | `boolean` | `true` | Shows evaluated answer in the bottom-right corner of the input box |
 | `showKeyboard` | `boolean` | `true` | Controls whether the virtual keyboard toggle button is visible/active |
 | `showMenu` | `boolean` | `true` | Controls whether the MathLive contextual menu toggle button is visible |
+| `showSuggestions` | `boolean` | `true` | Controls whether command suggestions popover appears when typing `\` |
+| `customSuggestions` | `string[]` | `undefined` | Optional custom list of LaTeX command suggestions when typing `\` |
+| `placeholderSymbol` | `string` | `""` | Symbol or character for unfilled math placeholders (empty string hides square boxes) |
 | `fontsDirectory` | `string` | `CDN` | Directory URL for MathLive fonts (defaults to official unpkg CDN) |
 | `className` | `string` | `""` | Root container styling class |
 | `inputWrapperClassName` | `string` | `""` | Math input box styling class (supports custom `bg-*`, `border-*`, `text-*`, `rounded-*`) |

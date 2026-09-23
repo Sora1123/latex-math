@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+math-field,
+math-field:focus,
+math-field:focus-visible,
+math-field:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}

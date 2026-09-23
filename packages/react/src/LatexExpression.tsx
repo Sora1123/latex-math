@@ -14,6 +14,10 @@ export interface LatexExpressionProps {
    * @default "html"
    */
   output?: "html" | "mathml" | "htmlAndMathml";
+  /**
+   * Optional custom macros for KaTeX rendering.
+   */
+  macros?: Record<string, string>;
 }
 
 export const LatexExpression: React.FC<LatexExpressionProps> = ({
@@ -21,6 +25,7 @@ export const LatexExpression: React.FC<LatexExpressionProps> = ({
   displayMode = false,
   className = "",
   output = "html",
+  macros,
 }) => {
   const containerRef = useRef<HTMLSpanElement>(null);
 
@@ -31,13 +36,17 @@ export const LatexExpression: React.FC<LatexExpressionProps> = ({
           displayMode,
           throwOnError: false,
           output,
+          macros: {
+            "\\dx": "\\,\\mathrm{d}x",
+            ...macros,
+          },
         });
       } catch (err) {
         // Fallback or ignore if katex throws (though throwOnError: false usually handles it)
         console.warn("KaTeX rendering error:", err);
       }
     }
-  }, [expression, displayMode, output]);
+  }, [expression, displayMode, output, macros]);
 
   return (
     <span

@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import "katex/dist/katex.min.css";
 import { normalizeLatex } from "@latex-math/core";
 import { useLatexEvaluation } from "./useLatexEvaluation";
 import { LatexExpression } from "./LatexExpression";
@@ -33,6 +34,20 @@ export interface LatexInputProps {
   showMenu?: boolean;
   showEvaluatedResult?: boolean;
   /**
+   * Whether to show autocomplete suggestions when typing "\" in the input.
+   * @default true
+   */
+  showSuggestions?: boolean;
+  /**
+   * Optional custom list of commands to suggest when typing "\" (e.g. ['\\sqrt', '\\frac', '\\int', '\\sin', '\\cos']).
+   */
+  customSuggestions?: string[];
+  /**
+   * Character or symbol used for empty placeholders in math templates.
+   * Defaults to empty string ("") so no square placeholder boxes are shown.
+   */
+  placeholderSymbol?: string;
+  /**
    * Directory where MathLive fonts are located.
    * Defaults to unpkg CDN ("https://unpkg.com/mathlive@0.110.0/dist/fonts/") to avoid Next.js/Webpack chunk 404s.
    */
@@ -57,7 +72,7 @@ function getBoxClasses(customClasses: string = ""): {
     hasRounded ? "" : "rounded-xl",
     hasCustomBg ? "" : "bg-white",
     hasShadow ? "" : "shadow-xs",
-    hasRing ? "" : "focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500",
+    hasRing ? "" : "focus-within:border-neutral-400",
     hasTextColor ? "" : "text-neutral-900",
     hasTextSize ? "" : "text-lg",
     customClasses,
@@ -132,8 +147,8 @@ const MATH_BUTTONS = [
   { label: "√x", latex: "\\sqrt{#?}", title: "Square Root" },
   { label: "ⁿ√x", latex: "\\sqrt[#?]{#?}", title: "nth Root" },
   { label: "π", latex: "\\pi", title: "Pi" },
-  { label: "∫", latex: "\\int_{#?}^{#?} #?\\, dx", title: "Definite Integral" },
-  { label: "Σ", latex: "\\sum_{#?}^{#?} #?", title: "Summation" },
+  { label: "∫", latex: "\\int_{#?}^{#?} \\dx", title: "Definite Integral" },
+  { label: "Σ", latex: "\\sum_{#?}^{#?}", title: "Summation" },
   { label: "sin", latex: "\\sin\\left(#?\\right)", title: "Sine" },
   { label: "cos", latex: "\\cos\\left(#?\\right)", title: "Cosine" },
   { label: "tan", latex: "\\tan\\left(#?\\right)", title: "Tangent" },
@@ -156,6 +171,9 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   showKeyboard = true,
   showMenu = true,
   showEvaluatedResult = true,
+  showSuggestions = true,
+  customSuggestions,
+  placeholderSymbol = "\u25A2",
   fontsDirectory,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -183,7 +201,6 @@ export const LatexInput: React.FC<LatexInputProps> = ({
     containerClasses: resultContainerClasses,
     badgeClasses: resultBadgeClasses,
     hasCustomText: hasResultText,
-    hasCustomBg: hasResultBg,
   } = useMemo(() => getResultClasses(resultClassName), [resultClassName]);
 
   const { result, error } = useLatexEvaluation(value, variables);
@@ -199,6 +216,130 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   const hasImplicitGrouping = Boolean(
     value && explicitLatex && explicitLatex !== value,
   );
+
+  // Global styling override to remove blue highlight on sqrt/numbers, remove focus rings, and style placeholders as grey rectangles
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const styleId = "latex-math-global-overrides";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = styleId;
+      styleEl.textContent = `
+        math-field {
+          --contains-highlight-background-color: transparent !important;
+          --_contains-highlight-background-color: transparent !important;
+          --contains-highlight-color: inherit !important;
+          --_contains-highlight-color: inherit !important;
+          --primary: inherit !important;
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        math-field:focus,
+        math-field:focus-visible,
+        math-field:focus-within {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        .ML__contains-caret .ML__sqrt-sign,
+        .ML__contains-caret .ML__sqrt-line,
+        .ML__contains-caret.ML__close,
+        .ML__contains-caret.ML__open,
+        .ML__contains-caret > .ML__close,
+        .ML__contains-caret > .ML__open {
+          color: inherit !important;
+        }
+        .ML__contains-highlight,
+        .ML__focused .ML__contains-highlight,
+        .ML__contains-caret.ML__contains-highlight {
+          background-color: transparent !important;
+          background: transparent !important;
+          color: inherit !important;
+          box-shadow: none !important;
+        }
+        .ML__placeholder {
+          display: inline-block !important;
+          min-width: 0.85em !important;
+          height: 0.9em !important;
+          background-color: rgba(140, 140, 140, 0.22) !important;
+          border-radius: 2px !important;
+          color: transparent !important;
+          font-size: 0.85em !important;
+          line-height: 1 !important;
+          vertical-align: 0.05em !important;
+          margin: 0 1.5px !important;
+          user-select: none !important;
+          box-shadow: inset 0 0 0 1px rgba(140, 140, 140, 0.12) !important;
+        }
+        .ML__placeholder-selected,
+        .ML__placeholder.ML__selected {
+          background-color: rgba(140, 140, 140, 0.38) !important;
+        }
+      `;
+      document.head.appendChild(styleEl);
+    }
+  }, []);
+
+  // Control LaTeX command suggestions popup
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const styleId = "latex-math-suggestions-style";
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+
+    if (!showSuggestions) {
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = styleId;
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = `
+        #mathlive-suggestion-popover,
+        .ML__suggestion-popover,
+        [data-ml-suggestion-popover] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `;
+    } else {
+      if (styleEl) {
+        styleEl.remove();
+      }
+    }
+
+    return () => {
+      if (!showSuggestions && styleEl && styleEl.parentNode) {
+        styleEl.remove();
+      }
+    };
+  }, [showSuggestions]);
+
+  // Filter custom suggestions if provided
+  useEffect(() => {
+    if (!showSuggestions || !customSuggestions || customSuggestions.length === 0) return;
+    if (typeof MutationObserver === "undefined") return;
+
+    const observer = new MutationObserver(() => {
+      const popover = document.getElementById("mathlive-suggestion-popover");
+      if (popover) {
+        const items = popover.querySelectorAll("li, [role='option'], [data-command]");
+        items.forEach((item) => {
+          const text = (item.textContent || "").trim();
+          const cmd = item.getAttribute("data-command") || text;
+          const match = customSuggestions.some(
+            (s) => s === cmd || cmd.startsWith(s) || s.startsWith(cmd)
+          );
+          if (!match) {
+            (item as HTMLElement).style.display = "none";
+          }
+        });
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [showSuggestions, customSuggestions]);
 
   // Synchronize showKeyboard and showMenu props with math-field element
   useEffect(() => {
@@ -219,6 +360,7 @@ export const LatexInput: React.FC<LatexInputProps> = ({
   useEffect(() => {
     if (typeof window !== "undefined" && fontsDirectory && (window as any).MathfieldElement) {
       (window as any).MathfieldElement.fontsDirectory = fontsDirectory;
+      document.body.classList.remove("ML__fonts-did-not-load");
     }
   }, [fontsDirectory]);
 
@@ -232,22 +374,13 @@ export const LatexInput: React.FC<LatexInputProps> = ({
 
       try {
         if (ml.MathfieldElement) {
-          const currentDir = ml.MathfieldElement.fontsDirectory;
-          if (fontsDirectory) {
-            ml.MathfieldElement.fontsDirectory = fontsDirectory;
-          } else if (
-            !currentDir ||
-            currentDir === "./fonts/" ||
-            currentDir.startsWith("./") ||
-            currentDir.includes("_next") ||
-            !currentDir.startsWith("http")
-          ) {
-            ml.MathfieldElement.fontsDirectory =
-              "https://unpkg.com/mathlive@0.110.0/dist/fonts/";
-          }
+          const targetDir =
+            fontsDirectory || "https://unpkg.com/mathlive@0.110.0/dist/fonts/";
+          ml.MathfieldElement.fontsDirectory = targetDir;
+          document.body.classList.remove("ML__fonts-did-not-load");
         }
       } catch {
-        // fallback to default
+        // fallback
       }
 
       let mf = containerRef.current.querySelector("math-field") as any;
@@ -270,6 +403,11 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         mf.style.background = "transparent";
         mf.style.color = "inherit";
         mf.style.setProperty("--color", "inherit");
+        mf.style.setProperty("--contains-highlight-background-color", "transparent");
+        mf.style.setProperty("--contains-highlight-color", "inherit");
+        mf.style.setProperty("--_contains-highlight-background-color", "transparent");
+        mf.style.setProperty("--_contains-highlight-color", "inherit");
+        mf.style.boxShadow = "none";
         mf.style.display = "block";
 
         if (placeholder) {
@@ -279,75 +417,431 @@ export const LatexInput: React.FC<LatexInputProps> = ({
         containerRef.current.appendChild(mf);
         mfRef.current = mf;
 
+        // Custom macros, shortcuts, and placeholderSymbol must be set AFTER mounting to the DOM
+        try {
+          if (placeholderSymbol !== undefined) {
+            mf.placeholderSymbol = placeholderSymbol;
+          }
+        } catch {
+          // ignore if option not available
+        }
+
+        const injectShadowStyles = () => {
+          if (mf.shadowRoot) {
+            const shadowStyleId = "latex-mathfield-shadow-overrides";
+            let shadowStyle = mf.shadowRoot.getElementById(shadowStyleId) as HTMLStyleElement;
+            if (!shadowStyle) {
+              shadowStyle = document.createElement("style");
+              shadowStyle.id = shadowStyleId;
+              shadowStyle.textContent = `
+                :host,
+                :host(:focus),
+                :host(:focus-visible),
+                :host(:focus-within),
+                .ML__keyboard-sink,
+                .ML__fieldcontainer {
+                  outline: none !important;
+                  box-shadow: none !important;
+                  border-color: transparent !important;
+                }
+                .ML__contains-caret .ML__sqrt-sign,
+                .ML__contains-caret .ML__sqrt-line,
+                .ML__contains-caret.ML__close,
+                .ML__contains-caret.ML__open,
+                .ML__contains-caret > .ML__close,
+                .ML__contains-caret > .ML__open {
+                  color: inherit !important;
+                }
+                .ML__contains-highlight,
+                .ML__focused .ML__contains-highlight,
+                .ML__contains-caret.ML__contains-highlight {
+                  background-color: transparent !important;
+                  background: transparent !important;
+                  color: inherit !important;
+                  box-shadow: none !important;
+                }
+                .ML__placeholder {
+                  display: inline-block !important;
+                  min-width: 0.85em !important;
+                  height: 0.9em !important;
+                  background-color: rgba(140, 140, 140, 0.22) !important;
+                  border-radius: 2px !important;
+                  color: transparent !important;
+                  font-size: 0.85em !important;
+                  line-height: 1 !important;
+                  vertical-align: 0.05em !important;
+                  margin: 0 1.5px !important;
+                  user-select: none !important;
+                  box-shadow: inset 0 0 0 1px rgba(140, 140, 140, 0.12) !important;
+                }
+                .ML__placeholder-selected,
+                .ML__placeholder.ML__selected {
+                  background-color: rgba(140, 140, 140, 0.38) !important;
+                }
+              `;
+              mf.shadowRoot.appendChild(shadowStyle);
+            }
+          }
+        };
+        injectShadowStyles();
+        mf.addEventListener("focus", injectShadowStyles);
+
+        try {
+          const existingMacros = mf._mathfield ? mf.macros || {} : {};
+          mf.macros = {
+            ...existingMacros,
+            dx: "{\\,\\mathrm{d}x}",
+          };
+        } catch {
+          // ignore
+        }
+
+        try {
+          const existingShortcuts = mf._mathfield ? mf.inlineShortcuts || {} : {};
+          const updatedShortcuts = {
+            ...existingShortcuts,
+            dx: "\\dx",
+            xx: "",
+          };
+          delete updatedShortcuts.xx;
+          mf.inlineShortcuts = updatedShortcuts;
+        } catch {
+          // ignore
+        }
+
+        try {
+          mf.onInlineShortcut = (_mf: any, shortcut: string) => {
+            if (shortcut === "xx") return "";
+            return shortcut;
+          };
+        } catch {
+          // ignore
+        }
+
         mf.addEventListener("input", (ev: Event) => {
           const val = (ev.target as any).value;
           onChange(val);
         });
 
-        mf.addEventListener("keydown", (ev: KeyboardEvent) => {
-          if (ev.key === "Backspace") {
-            const mathfield = (mf as any)._mathfield;
-            const model = mathfield?.model;
-            if (!model) return;
+        const deleteEntireIntegral = (intAtom: any) => {
+          const mathfield = (mf as any)._mathfield;
+          const model = mathfield?.model;
+          if (!intAtom || !model) return;
+          const intIndex = model.offsetOf(intAtom);
+          const beforePos = Math.max(0, intIndex - 1);
 
-            const pos = model.position;
-            const target = model.at(pos);
-            const parent = target?.parent;
-
-            const isInt = (a: any) =>
-              a && (a.command === "\\int" || a.type === "integral");
-
-            let intAtom: any = null;
-            let branch = "";
-            if (isInt(parent)) {
-              intAtom = parent;
-              branch = target?.parentBranch || "";
-            } else if (isInt(target)) {
-              intAtom = target;
-            } else if (isInt(target?.rightSibling)) {
-              intAtom = target.rightSibling;
+          // Find all contiguous descendant atoms of intAtom in model.atoms
+          let lastIndex = intIndex;
+          const atoms = model.atoms || [];
+          for (let i = intIndex + 1; i < atoms.length; i++) {
+            let a = atoms[i];
+            let isChild = false;
+            while (a) {
+              if (a === intAtom) {
+                isChild = true;
+                break;
+              }
+              a = a.parent;
             }
+            if (isChild) {
+              lastIndex = i;
+            } else {
+              break;
+            }
+          }
 
-            if (intAtom) {
-              const sup =
-                intAtom.superscript ||
-                (typeof intAtom.branch === "function" &&
-                  intAtom.branch("superscript"));
-              const isSupEmpty =
-                !sup ||
-                sup.length === 0 ||
-                (sup.length === 1 &&
-                  (sup[0].type === "placeholder" || sup[0].type === "first"));
+          try {
+            if (intAtom.parent && typeof intAtom.parent.removeChild === "function") {
+              intAtom.parent.removeChild(intAtom);
+            }
+          } catch {
+            // ignore
+          }
 
-              if (
-                (branch === "superscript" && isSupEmpty) ||
-                (target?.rightSibling === intAtom &&
-                  (target.isFirstSibling || target.type === "first"))
-              ) {
+          try {
+            if (typeof model.deleteAtoms === "function") {
+              model.deleteAtoms([Math.max(0, intIndex - 1), lastIndex]);
+            }
+          } catch {
+            // ignore
+          }
+
+          model.position = beforePos;
+          if (typeof mathfield.render === "function") {
+            mathfield.render();
+          }
+          onChange(mf.value);
+        };
+
+        mf.addEventListener("keydown", (ev: KeyboardEvent) => {
+          const mathfield = (mf as any)._mathfield;
+          const model = mathfield?.model;
+          if (!model) return;
+
+          const isIntegral = (a: any) =>
+            Boolean(
+              a &&
+              (a.command === "\\int" ||
+                a.type === "integral" ||
+                a.type === "extensible-symbol" ||
+                (a.type === "operator" && a.value === "\\int") ||
+                a.command?.includes("int"))
+            );
+
+          const pos = model.position;
+          const target = model.at(pos);
+          const parent = target?.parent;
+
+          // Identify if target or an ancestor is an integral
+          let intAtom: any = null;
+          let inBranch: "superscript" | "subscript" | null = null;
+
+          if (target?.parentBranch === "superscript" && isIntegral(parent)) {
+            intAtom = parent;
+            inBranch = "superscript";
+          } else if (target?.parentBranch === "subscript" && isIntegral(parent)) {
+            intAtom = parent;
+            inBranch = "subscript";
+          } else if (parent && isIntegral(parent)) {
+            intAtom = parent;
+            inBranch = target?.parentBranch === "subscript" ? "subscript" : "superscript";
+          } else if (isIntegral(target)) {
+            intAtom = target;
+          } else {
+            let anc = target?.parent;
+            while (anc) {
+              if (isIntegral(anc)) {
+                intAtom = anc;
+                inBranch = target?.parentBranch === "subscript" ? "subscript" : "superscript";
+                break;
+              }
+              anc = anc.parent;
+            }
+          }
+
+          // Backspace behavior for integral
+          if (ev.key === "Backspace") {
+            if (intAtom && inBranch) {
+              const branchAtoms = (
+                intAtom[inBranch] ||
+                (typeof intAtom.branch === "function" && intAtom.branch(inBranch)) ||
+                []
+              ).filter(
+                (a: any) => a && a.type !== "first" && a.type !== "placeholder"
+              );
+
+              if (branchAtoms.length > 0) {
+                // Real content in this limit: delete the character, keep integral
                 ev.preventDefault();
                 ev.stopPropagation();
 
-                const p = intAtom.parent;
-                const leftPos = model.offsetOf(intAtom.leftSibling);
-                if (p && typeof p.removeChild === "function") {
-                  p.removeChild(intAtom);
-                  model.position = Math.max(0, leftPos);
+                const atomToDelete =
+                  target &&
+                  target.type !== "first" &&
+                  target.type !== "placeholder" &&
+                  target.parentBranch === inBranch
+                    ? target
+                    : branchAtoms[branchAtoms.length - 1];
+
+                if (atomToDelete) {
+                  const bParent = atomToDelete.parent;
+                  const prevSibling = atomToDelete.leftSibling;
+                  const newPos = prevSibling
+                    ? model.offsetOf(prevSibling)
+                    : Math.max(0, model.offsetOf(atomToDelete) - 1);
+
+                  if (bParent && typeof bParent.removeChild === "function") {
+                    try {
+                      bParent.removeChild(atomToDelete);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  model.position = Math.max(0, newPos);
                   if (typeof mathfield.render === "function") {
                     mathfield.render();
                   }
                   onChange(mf.value);
-                } else {
-                  model.setSelection(leftPos, model.offsetOf(intAtom));
-                  mf.executeCommand(["deleteBackward"]);
-                  onChange(mf.value);
+                  return;
                 }
+              } else {
+                // Limit is empty: deleting backward removes the ENTIRE integral!
+                ev.preventDefault();
+                ev.stopPropagation();
+                deleteEntireIntegral(intAtom);
+                return;
+              }
+            } else if (isIntegral(target)) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              deleteEntireIntegral(target);
+              return;
+            }
+          }
+
+          // ArrowRight navigation for integral
+          // Order: front of integral -> lower limit -> upper limit -> after integral
+          if (ev.key === "ArrowRight") {
+            if (!model.selectionIsCollapsed) return;
+
+            // In front of integral: move into lower limit
+            const nextAtom = model.at(pos + 1);
+            const candidateInt = isIntegral(target?.rightSibling)
+              ? target.rightSibling
+              : isIntegral(nextAtom)
+              ? nextAtom
+              : null;
+
+            if (candidateInt) {
+              const sub =
+                candidateInt.subscript ||
+                (typeof candidateInt.branch === "function" &&
+                  candidateInt.branch("subscript")) ||
+                [];
+              if (sub.length > 0) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                const targetSub = sub.length > 1 ? sub[1] : sub[0];
+                model.position = model.offsetOf(targetSub);
+                if (typeof mathfield.render === "function") mathfield.render();
+                return;
+              }
+            }
+
+            // Inside lower limit: at end of lower limit, jump to start of upper limit
+            if (intAtom && inBranch === "subscript") {
+              const sub =
+                intAtom.subscript ||
+                (typeof intAtom.branch === "function" &&
+                  intAtom.branch("subscript")) ||
+                [];
+              const lastSubAtom = sub[sub.length - 1];
+              const isAtEndOfSub =
+                pos >= model.offsetOf(lastSubAtom) || target === lastSubAtom;
+
+              if (isAtEndOfSub) {
+                const sup =
+                  intAtom.superscript ||
+                  (typeof intAtom.branch === "function" &&
+                    intAtom.branch("superscript")) ||
+                  [];
+                if (sup.length > 0) {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  const targetSup = sup.length > 1 ? sup[1] : sup[0];
+                  model.position = model.offsetOf(targetSup);
+                  if (typeof mathfield.render === "function")
+                    mathfield.render();
+                  return;
+                }
+              }
+            }
+
+            // Inside upper limit: at end of upper limit, jump to AFTER the integral
+            if (intAtom && inBranch === "superscript") {
+              const sup =
+                intAtom.superscript ||
+                (typeof intAtom.branch === "function" &&
+                  intAtom.branch("superscript")) ||
+                [];
+              const lastSupAtom = sup[sup.length - 1];
+              const isAtEndOfSup =
+                pos >= model.offsetOf(lastSupAtom) || target === lastSupAtom;
+
+              if (isAtEndOfSup) {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                let lastIndex = model.offsetOf(intAtom);
+                const atoms = model.atoms || [];
+                for (let i = lastIndex + 1; i < atoms.length; i++) {
+                  let a = atoms[i];
+                  let isChild = false;
+                  while (a) {
+                    if (a === intAtom) {
+                      isChild = true;
+                      break;
+                    }
+                    a = a.parent;
+                  }
+                  if (isChild) lastIndex = i;
+                  else break;
+                }
+
+                model.position = lastIndex;
+                if (typeof mathfield.render === "function") mathfield.render();
+                return;
+              }
+            }
+          }
+
+          // ArrowLeft navigation for integral
+          // Order: after integral -> end of upper limit -> end of lower limit -> front of integral
+          if (ev.key === "ArrowLeft") {
+            if (!model.selectionIsCollapsed) return;
+
+            // Inside upper limit: at start of upper limit, jump to end of lower limit
+            if (intAtom && inBranch === "superscript") {
+              const sup =
+                intAtom.superscript ||
+                (typeof intAtom.branch === "function" &&
+                  intAtom.branch("superscript")) ||
+                [];
+              const firstSupAtom = sup[0];
+              const isAtStartOfSup =
+                pos <= model.offsetOf(firstSupAtom) ||
+                target === firstSupAtom ||
+                target?.type === "first";
+
+              if (isAtStartOfSup) {
+                const sub =
+                  intAtom.subscript ||
+                  (typeof intAtom.branch === "function" &&
+                    intAtom.branch("subscript")) ||
+                  [];
+                if (sub.length > 0) {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  model.position = model.offsetOf(sub[sub.length - 1]);
+                  if (typeof mathfield.render === "function")
+                    mathfield.render();
+                  return;
+                }
+              }
+            }
+
+            // Inside lower limit: at start of lower limit, jump to in front of integral
+            if (intAtom && inBranch === "subscript") {
+              const sub =
+                intAtom.subscript ||
+                (typeof intAtom.branch === "function" &&
+                  intAtom.branch("subscript")) ||
+                [];
+              const firstSubAtom = sub[0];
+              const isAtStartOfSub =
+                pos <= model.offsetOf(firstSubAtom) ||
+                target === firstSubAtom ||
+                target?.type === "first";
+
+              if (isAtStartOfSub) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                const frontPos = model.offsetOf(intAtom.leftSibling);
+                model.position = Math.max(0, frontPos);
+                if (typeof mathfield.render === "function") mathfield.render();
+                return;
               }
             }
           }
         });
       }
 
-      mf.setValue(value || "", { silenceNotifications: true });
+      mfRef.current = mf;
+      try {
+        mf.setValue(value || "", { silenceNotifications: true });
+      } catch {
+        // ignore if not ready
+      }
       setIsMounted(true);
     });
 
@@ -355,16 +849,6 @@ export const LatexInput: React.FC<LatexInputProps> = ({
       active = false;
     };
   }, []);
-
-  // useEffect(() => {
-  //   if (mfRef.current) {
-  //     mfRef.current.setAttribute(
-  //       "virtual-keyboard-mode",
-  //       showKeyboard ? "manual" : "off",
-  //     );
-  //     mfRef.current.setAttribute("menu-items", showMenu ? "all" : "none");
-  //   }
-  // }, [showKeyboard, showMenu]);
 
   // Synchronize external value changes to MathField
   useEffect(() => {
@@ -422,47 +906,25 @@ export const LatexInput: React.FC<LatexInputProps> = ({
             onClick={() => mfRef.current?.focus()}
           />
 
-          {/* Evaluated Result Box */}
-          {showEvaluatedResult && (
+          {/* Evaluated Result Box: Only appears when there is no error and result is not null */}
+          {showEvaluatedResult && !error && result !== null && (
             <div className={resultContainerClasses}>
-              {error ? (
-                <div
-                  className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-sans font-medium shadow-2xs border border-amber-200/90 ${
-                    hasResultBg ? "" : "bg-amber-50"
-                  } ${
-                    hasResultText ? "" : "text-amber-800"
-                  } ${resultBadgeClasses}`}
+              <div className={resultBadgeClasses}>
+                <span
+                  className={`${
+                    hasResultText ? "opacity-60" : "text-neutral-400"
+                  } font-normal select-none text-xs`}
                 >
-                  <span>{error}</span>
-                </div>
-              ) : (
-                <div className={resultBadgeClasses}>
-                  <span
-                    className={`${
-                      hasResultText ? "opacity-60" : "text-neutral-400"
-                    } font-normal select-none text-xs`}
-                  >
-                    =
-                  </span>
-                  {result !== null ? (
-                    <LatexExpression
-                      expression={result}
-                      output="html"
-                      className={`${
-                        hasResultText ? "" : "text-neutral-900"
-                      } font-medium`}
-                    />
-                  ) : (
-                    <span
-                      className={`${
-                        hasResultText ? "opacity-60" : "text-neutral-400"
-                      } text-xs font-mono`}
-                    >
-                      —
-                    </span>
-                  )}
-                </div>
-              )}
+                  =
+                </span>
+                <LatexExpression
+                  expression={result}
+                  output="html"
+                  className={`${
+                    hasResultText ? "" : "text-neutral-900"
+                  } font-medium`}
+                />
+              </div>
             </div>
           )}
         </div>
